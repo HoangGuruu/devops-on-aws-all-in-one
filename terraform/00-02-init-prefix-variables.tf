@@ -7,13 +7,13 @@ variable "aws_region" {
 }
 # Environment Variable
 variable "environment" {
-  description = "Environment Variable used as a prefix"
+  description = "Environment Variable used as a prefix develop/staging/production"
   type = string
-  default = "dev"
+  default = "develop"
 }
-# Business Division
+# Business Department
 variable "business_divsion" {
-  description = "Business Division in the large organization this Infrastructure belongs"
+  description = "Business Department in the large organization this Infrastructure belongs"
   type = string
-  default = "SAP"
+  default = "DevOps"
 }
