@@ -13,7 +13,7 @@ variable "cluster_service_ipv4_cidr" {
 
 variable "cluster_version" {
   description = "Kubernetes minor version to use for the EKS cluster (for example 1.21)"
-  type = string
+  type        = string
   default     = null
 }
 variable "cluster_endpoint_private_access" {
@@ -36,4 +36,53 @@ variable "cluster_endpoint_public_access_cidrs" {
 
 # EKS Node Group Variables
 ## Placeholder space you can create if required
+
+# Node Group Variables
+variable "node_ami_type" {
+  description = "Type of AMI to use for the EKS worker nodes (e.g., AL2_x86_64, AL2_ARM_64)"
+  type        = string
+  default     = "AL2023_x86_64_STANDARD"
+}
+
+variable "node_capacity_type" {
+  description = "EKS node capacity type (ON_DEMAND or SPOT)"
+  type        = string
+  default     = "ON_DEMAND"
+}
+
+variable "node_disk_size" {
+  description = "Disk size in GiB for worker nodes"
+  type        = number
+  default     = 100
+}
+
+variable "node_instance_type" {
+  description = "EC2 instance type for worker nodes"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "node_desired_size" {
+  description = "Desired number of nodes in the group"
+  type        = number
+  default     = 3
+}
+
+variable "node_min_size" {
+  description = "Minimum number of nodes in the group"
+  type        = number
+  default     = 1
+}
+
+variable "node_max_size" {
+  description = "Maximum number of nodes in the group"
+  type        = number
+  default     = 7
+}
+
+variable "node_max_unavailable" {
+  description = "Maximum number of unavailable nodes during update"
+  type        = number
+  default     = 1
+}
 

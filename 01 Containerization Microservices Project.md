@@ -1,3 +1,24 @@
+# DevOps on AWS Real Project - All In One
+
+## Containerization Microservices Project
+
+### dockercompose 
+```sh
+docker compose up -d
+docker compose up -d --build # Have change and want to build again
+docker ps
+docker ps -a
+docker images ls
+docker logs mongodb
+docker logs mysql
+docker logs details
+docker logs ratings
+docker logs reviews
+docker logs productpage
+docker volume ls
+```
+
+```sh
 version: "3.9"
 
 name: devops-aws-real-project
@@ -118,3 +139,6 @@ networks:
 volumes:
   mongo-data:
   mysql-data:
+
+```
+

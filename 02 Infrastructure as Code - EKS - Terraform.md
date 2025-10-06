@@ -2,10 +2,39 @@
 
 ## Infrastructure as Code - EKS - Terraform
 
-### 
+### Terraform CLI
 
-- 
-[Install Docker on Ubuntu](https://www.google.com)
+```sh
+# Initialize Terraform — download providers and modules
+terraform init
+
+# Validate syntax and configuration (check for errors)
+terraform validate
+
+# (Optional) Format all .tf files recursively to follow Terraform HCL style
+terraform fmt -recursive
+
+# Preview infrastructure changes using variables from terraform.develop.tfvars
+terraform plan -var-file="terraform.develop.tfvars"
+
+# Apply (deploy) infrastructure automatically without confirmation
+terraform apply -var-file="terraform.develop.tfvars" -auto-approve
+
+# (Optional) Refresh only local Terraform state with real values from AWS
+# terraform refresh -var-file="terraform.develop.tfvars"
+
+# Destroy all resources created by this Terraform configuration
+terraform destroy -var-file="terraform.develop.tfvars" -auto-approve
+
+```
+
+### EKS Connect CLI
+
+```sh
+# Connect EKS Cluster
+aws eks update-kubeconfig --region  us-east-1 --name devops-hoangguruu-develop-eks-01
+
+```
 
 
 # Work with EKS

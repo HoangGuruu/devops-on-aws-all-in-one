@@ -5,10 +5,9 @@
 ### Check Ubuntu Machine
 
 ```sh
-
-x86-64
-ARM64
-
+uname -m
+# x86_64 → your machine is x86-64 (Intel/AMD)
+# aarch64 → your machine is ARM64 (Apple Silicon, AWS Graviton, etc.)
 ```
 
 ### Install Docker on Ubuntu
