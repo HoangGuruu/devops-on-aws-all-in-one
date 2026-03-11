@@ -1,7 +1,7 @@
 # General Configuration
 aws_region          = "us-east-1"
-environment         = "develop"
-business_department = "devops-hoangguruu"
+environment         = "prod"
+business_department = "devops-on-aws-all-in-one"
 # VPC Configuration
 vpc_name                                = "vpc-01"
 vpc_cidr_block                          = "10.0.0.0/16"
@@ -22,7 +22,7 @@ cluster_endpoint_public_access          = true
 cluster_endpoint_public_access_cidrs    = ["0.0.0.0/0"]
 
 # Node Group
-node_instance_type  = "t3.medium"
+node_instance_type  = "t2.medium"
 node_desired_size   = 1
 node_min_size       = 1
 node_max_size       = 2

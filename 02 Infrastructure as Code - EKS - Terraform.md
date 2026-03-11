@@ -5,23 +5,17 @@
 ### Terraform CLI
 
 ```sh
-# Initialize Terraform — download providers and modules
+# Initialize Terraform 
 terraform init
 
-# Validate syntax and configuration (check for errors)
+# Validate syntax and configuration 
 terraform validate
 
-# (Optional) Format all .tf files recursively to follow Terraform HCL style
-terraform fmt -recursive
-
-# Preview infrastructure changes using variables from terraform.develop.tfvars
+# Preview infrastructure
 terraform plan -var-file="terraform.develop.tfvars"
 
-# Apply (deploy) infrastructure automatically without confirmation
+# Apply without confirmation
 terraform apply -var-file="terraform.develop.tfvars" -auto-approve
-
-# (Optional) Refresh only local Terraform state with real values from AWS
-# terraform refresh -var-file="terraform.develop.tfvars"
 
 # Destroy all resources created by this Terraform configuration
 terraform destroy -var-file="terraform.develop.tfvars" -auto-approve
@@ -32,7 +26,7 @@ terraform destroy -var-file="terraform.develop.tfvars" -auto-approve
 
 ```sh
 # Connect EKS Cluster
-aws eks update-kubeconfig --region  us-east-1 --name devops-hoangguruu-develop-eks-01
+aws eks update-kubeconfig --region  us-east-1 --name devops-on-aws-all-in-one-prod-eks-01
 
 # Alis 
 k=kubectl
