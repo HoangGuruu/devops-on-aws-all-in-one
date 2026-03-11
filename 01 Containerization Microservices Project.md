@@ -21,7 +21,7 @@ docker volume ls
 ```sh
 version: "3.9"
 
-name: devops-aws-real-project
+name: devops-on-aws-all-in-one
 
 services:
   # ---------- Databases ----------
@@ -142,3 +142,33 @@ volumes:
 
 ```
 
+### ECR 
+
+```sh
+# Tag Images
+
+docker tag devops-on-aws-all-in-one-details:latest 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:details-latest
+
+docker tag devops-on-aws-all-in-one-mongodb:latest 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:mongodb-latest
+
+docker tag devops-on-aws-all-in-one-mysql:latest 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:mysql-latest
+
+docker tag devops-on-aws-all-in-one-productpage:latest 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:productpage-latest
+
+docker tag devops-on-aws-all-in-one-ratings:latest 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:ratings-latest
+
+docker tag devops-on-aws-all-in-one-reviews:latest 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:reviews-latest
+
+# Push Command
+docker push 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:details-latest
+
+docker push 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:mongodb-latest
+
+docker push 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:mysql-latest
+
+docker push 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:productpage-latest
+
+docker push 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:ratings-latest
+
+docker push 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:reviews-latest
+```
