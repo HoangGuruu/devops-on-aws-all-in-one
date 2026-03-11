@@ -1,6 +1,6 @@
 version: "3.9"
 
-name: devops-aws-real-project
+name: devops-on-aws-all-in-one
 
 services:
   # ---------- Databases ----------
