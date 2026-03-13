@@ -74,7 +74,7 @@ spec:
       - name: ecr-secret
       containers:
       - name: details
-        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:detais-latest
+        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:details-latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9080
