@@ -4,6 +4,15 @@
 
 ### Deploy Book App version 1 
 
+- Setup permission to pull image from ECR
+```sh
+kubectl create secret docker-registry ecr-secret \
+  --docker-server=736059458620.dkr.ecr.us-east-1.amazonaws.com \
+  --docker-username=AWS \
+  --docker-password="$(aws ecr get-login-password --region us-east-1)" \
+  --namespace=default
+```
+
 ```sh
 # Deploy application 
 kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml

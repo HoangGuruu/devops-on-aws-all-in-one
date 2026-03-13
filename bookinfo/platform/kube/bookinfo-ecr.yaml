@@ -70,6 +70,8 @@ spec:
         version: v1
     spec:
       serviceAccountName: bookinfo-details
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: details
         image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:detais-latest
@@ -121,6 +123,8 @@ spec:
         version: v1
     spec:
       serviceAccountName: bookinfo-ratings
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: ratings
         image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:ratings-latest
@@ -172,6 +176,8 @@ spec:
         version: v1
     spec:
       serviceAccountName: bookinfo-reviews
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: reviews
         image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:reviews-latest
@@ -212,6 +218,8 @@ spec:
         version: v2
     spec:
       serviceAccountName: bookinfo-reviews
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: reviews
         image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:reviews-latest
@@ -252,6 +260,8 @@ spec:
         version: v3
     spec:
       serviceAccountName: bookinfo-reviews
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: reviews
         image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:reviews-latest
@@ -320,6 +330,8 @@ spec:
         version: v1
     spec:
       serviceAccountName: bookinfo-productpage
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: productpage
         image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:reviews-latest
