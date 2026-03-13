@@ -120,6 +120,71 @@ kubectl get deployment -n kube-system | grep metrics-server
 kubectl top node
 ```
 
+
+#### Deploy Simple app Nginx
+
+- Create file `nginx-deployment.yaml`
+
+```sh
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+```
+- Then run apply 
+```sh
+kubectl apply -f nginx-deployment.yaml
+# Check resources
+kubectl get deploy
+kubectl get po
+kubectl get svc
+```
+- Quick check nginx app run successfully
+```sh
+kubectl port-forward deployment/nginx-deployment 8080:80
+# New terminal
+curl localhost:8080
+# Want to ping out local
+kubectl port-forward --address 0.0.0.0 deployment/nginx-deployment 8080:80
+# --> Access http://number-ip-public-ubuntu:8080/
+
+# Delete Nginx Deployment  
+kubectl delete deployment nginx-deployment 
+kubectl get deploy
+
+```
 -------------------------------
 
 
