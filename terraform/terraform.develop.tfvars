@@ -16,7 +16,7 @@ vpc_single_nat_gateway                  = false
 # EKS Cluster Configuration
 cluster_name                            = "eks-01"
 cluster_service_ipv4_cidr               = null            # leave null to let AWS decide
-cluster_version                         = "1.34"          # example Kubernetes version
+cluster_version                         = "1.35"          # example Kubernetes version
 cluster_endpoint_private_access         = false
 cluster_endpoint_public_access          = true
 cluster_endpoint_public_access_cidrs    = ["0.0.0.0/0"]

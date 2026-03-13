@@ -28,10 +28,83 @@ terraform destroy -var-file="terraform.develop.tfvars" -auto-approve
 # Connect EKS Cluster
 aws eks update-kubeconfig --region  us-east-1 --name devops-on-aws-all-in-one-prod-eks-01
 
-# Alis 
+# Kubectl Command Line  
+
+## Alias
 k=kubectl
-kubectl get node
-k get node
+
+# 1 Check Basic Resource
+kubectl get nodes
+k get nodes
+k get ns
+k get pods
+k get deployments
+k get svc
+k get ingress
+k get pvc
+k get pv
+k get configmap
+k get secret
+k get sa
+k get events
+
+## 2 Check in namespace
+k get pods -n my-namespace
+
+## 3 Check ALL namespace
+k get pods -A
+k get all -A
+
+## 4 Check detail
+k describe node <node-name>
+
+## 5 Check with output
+k get nodes -o wide
+k get pod <pod-name> -o yaml
+
+## 6 Check realtime 
+k get pods -w
+
+## 7 Check logs
+k logs <pod-name>
+k logs <pod-name> -f
+k logs <pod-name> -c <container-name>
+k logs deployment/<deployment-name>
+k logs deployment/<deployment-name> -f
+
+## 8 Check shell in pod
+k exec -it <pod-name> -- /bin/sh
+k exec -it <pod-name> -- /bin/bash
+
+## 9 Check resource usage
+k top nodes
+k top pods
+k top pods -A
+
+## 10 Check with label
+k get pods -l app=nginx
+
+## 11 Check rollout / status deploy
+k rollout status deployment/<deployment-name>
+k rollout history deployment/<deployment-name>
+## 12 Check current context / cluster 
+k config current-context
+k config get-contexts
+k cluster-info
+k cluster-info dump
+
+## 13 Resources short name
+nodes        = no
+namespaces   = ns
+pods         = po
+services     = svc
+deployments  = deploy
+ingress      = ing
+configmaps   = cm
+
+### Example
+k get no
+k get po -A
 ```
 
 ### Work with EKS - Neccesary Tools Setup
@@ -46,73 +119,6 @@ kubectl patch deployment metrics-server -n kube-system --type='json' \
 kubectl get deployment -n kube-system | grep metrics-server
 kubectl top node
 ```
-
-#### Setup Ingress Nginx Controller
-
-- You can reference this way
-[Setup Ingress Nginx Controller](https://kubernetes.github.io/ingress-nginx/deploy/)
-
-```sh
-helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
-
-helm uninstall ingress-nginx --namespace ingress-nginx
-
-
-```
-#### Installing cert-manager
-- You can reference this way
-[Installing cert-manager ](https://cert-manager.io/docs/installation/)
-
-```sh
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-helm install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --set installCRDs=true
-
-# Uninstall
-helm uninstall cert-manager --namespace cert-manager
-
-```
-
-#### Create file cluster-issuer.yaml:
-```sh
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: hoangguruu@gmail.com 
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-    - http01:
-        ingress:
-          class: nginx
-```
-
-```sh
-# The ClusterIssuer defines how cert-manager will request certificates
-kubectl apply -f eks/cluster-issuer.yaml
-kubectl get clusterissuer
-```
-#### Run Nginx Testing App
-```sh
-kubectl apply -f eks/app-test.yaml
-kubectl get pod
-kubectl get svc
-kubectl get ingress
-kubectl get certificate -A
-kubectl describe certificate hoangguruu-id-vn-tls
-```
-##### Notice: 
-Cloudflare: SSL/TLS encryption - Current encryption mode: Full
-
-
-
 
 -------------------------------
 
