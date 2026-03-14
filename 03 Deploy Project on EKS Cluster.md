@@ -11,7 +11,16 @@ kubectl create secret docker-registry ecr-secret \
   --docker-username=AWS \
   --docker-password="$(aws ecr get-login-password --region us-east-1)" \
   --namespace=default
+
+# Check secret
+kubectl get secret ecr-secret
 ```
+- Setup Secret Variable
+```sh
+kubectl create secret generic ratings-secret \
+  --from-literal=MONGO_DB_URL='mongodb://username:password@mongodb:27017/test'
+```
+
 
 ```sh
 # Deploy application 
