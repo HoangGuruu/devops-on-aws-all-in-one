@@ -1,53 +1,64 @@
+
+---
 ##################################################################################################
-# Details service
+# Productpage services
 ##################################################################################################
 apiVersion: v1
 kind: Service
 metadata:
-  name: details
+  name: productpage
   labels:
-    app: details
-    service: details
+    app: productpage
+    service: productpage
 spec:
   ports:
   - port: 9080
     name: http
   selector:
-    app: details
+    app: productpage
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: bookinfo-details
+  name: bookinfo-productpage
   labels:
-    account: details
+    account: productpage
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: details-v1
+  name: productpage-v1
   labels:
-    app: details
+    app: productpage
     version: v1
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: details
+      app: productpage
       version: v1
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9080"
+        prometheus.io/path: "/metrics"
       labels:
-        app: details
+        app: productpage
         version: v1
     spec:
-      serviceAccountName: bookinfo-details
+      serviceAccountName: bookinfo-productpage
       imagePullSecrets:
       - name: ecr-secret
       containers:
-      - name: details
-        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:details-latest
+      - name: productpage
+        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:productpage-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 9080
----
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}

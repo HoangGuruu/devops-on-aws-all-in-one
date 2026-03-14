@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reviews-v2
+  name: reviews-v3
   labels:
     app: reviews
-    version: v2
+    version: v3
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: reviews
-      version: v2
+      version: v3
   template:
     metadata:
       labels:
         app: reviews
-        version: v2
+        version: v3
     spec:
       serviceAccountName: bookinfo-reviews
       imagePullSecrets:
@@ -31,7 +31,7 @@ spec:
         - name: ENABLE_RATINGS
           value: "true"
         - name: STAR_COLOR
-          value: "black"
+          value: "red"
         - name: DB_TYPE
           value: mongodb
         ports:
@@ -46,4 +46,3 @@ spec:
         emptyDir: {}
       - name: tmp
         emptyDir: {}
-
