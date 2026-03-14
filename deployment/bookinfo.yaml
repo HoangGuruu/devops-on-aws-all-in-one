@@ -103,12 +103,19 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: SERVICE_VERSION
-          value: "v1"
+          value: "v2"
+        - name: DB_TYPE
+          value: "mongodb"
         - name: MONGO_DB_URL
-        valueFrom:
-          secretKeyRef:
-            name: ratings-secret
-            key: MONGO_DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: ratings-mongodb-secret
+              key: MONGO_DB_URL
+        # - name: MYSQL_DB_URL
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: ratings-mysql-secret
+        #       key: MYSQL_DB_URL
         ports:
         - containerPort: 9080
 ---
@@ -165,6 +172,10 @@ spec:
         env:
         - name: LOG_DIR
           value: "/tmp/logs"
+        - name: ENABLE_RATINGS
+          value: "false"
+        - name: DB_TYPE
+          value: mongodb
         ports:
         - containerPort: 9080
         volumeMounts:
@@ -207,6 +218,12 @@ spec:
         env:
         - name: LOG_DIR
           value: "/tmp/logs"
+        - name: ENABLE_RATINGS
+          value: "true"
+        - name: STAR_COLOR
+          value: "black"
+        - name: DB_TYPE
+          value: mongodb
         ports:
         - containerPort: 9080
         volumeMounts:
@@ -249,6 +266,12 @@ spec:
         env:
         - name: LOG_DIR
           value: "/tmp/logs"
+        - name: ENABLE_RATINGS
+          value: "true"
+        - name: STAR_COLOR
+          value: "red"
+        - name: DB_TYPE
+          value: mongodb
         ports:
         - containerPort: 9080
         volumeMounts:
@@ -323,5 +346,128 @@ spec:
           mountPath: /tmp
       volumes:
       - name: tmp
+        emptyDir: {}
+---
+
+##################################################################################################
+# Mongo DB
+##################################################################################################
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  labels:
+    app: mongodb
+    service: mongodb
+spec:
+  ports:
+  - port: 27017
+    name: mongo
+  selector:
+    app: mongodb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-v1
+  labels:
+    app: mongodb
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: mongodb
+        version: v1
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: mongodb 
+        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:mongodb-latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 27017
+        args:
+        - '--ipv6'
+        - '--bind_ip_all'
+        volumeMounts:
+        - name: data-db
+          mountPath: /data/db
+      volumes:
+      - name: data-db
+        emptyDir: {}
+---
+##################################################################################################
+# MySQL
+##################################################################################################
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-credentials
+type: Opaque
+data:
+  # rootpasswd = password
+  rootpasswd: cGFzc3dvcmQ= # encoded
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysqldb
+  labels:
+    app: mysqldb
+    service: mysqldb
+spec:
+  ports:
+  - port: 3306
+    name: tcp
+  selector:
+    app: mysqldb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqldb-v1
+  labels:
+    app: mysqldb
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysqldb
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: mysqldb
+        version: v1
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: mysqldb
+        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:mysql-latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3306
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-credentials
+                key: rootpasswd
+        volumeMounts:
+        - name: var-lib-mysql
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: var-lib-mysql
         emptyDir: {}
 ---

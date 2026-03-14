@@ -17,22 +17,58 @@ kubectl get secret ecr-secret
 ```
 - Setup Secret Variable
 ```sh
-kubectl create secret generic ratings-secret \
-  --from-literal=MONGO_DB_URL='mongodb://username:password@mongodb:27017/test'
+# kubectl create secret generic ratings-mongodb-secret \
+#   --from-literal=MONGO_DB_URL='mongodb://username:password@mongodb:27017/test'
+
+# Case: mongodb on the same namespace with deployment
+kubectl create secret generic ratings-mongodb-secret \
+  --from-literal=MONGO_DB_URL='mongodb://mongodb:27017/test'
+
+# Check secret
+k get secret ratings-mongodb-secret
+
+# MYSQL
+kubectl create secret generic ratings-mysql-secret \
+  --from-literal=MYSQL_DB_URL='root:password@tcp(mysql:3306)/test'
 ```
 
-
+- Deploy Complete Application
 ```sh
 # Deploy application 
-kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+kubectl apply -f deployment/bookinfo.yaml
 # Check access in another terminal
 kubectl port-forward svc/productpage 9080:9080
 # Check access out local
 kubectl port-forward --address 0.0.0.0 svc/productpage 9080:9080
 # --> Access http://number-ip-public-ubuntu:9080/
+# Load Many times to check 3 version
+```
+- Scale to test version - Access browser again
+```sh
+kubectl scale deploy reviews-v1 --replicas=1
+kubectl scale deploy reviews-v2 --replicas=0
+kubectl scale deploy reviews-v3 --replicas=0
 ```
 
+```sh
+# Check Database MongoDB
+kubectl exec -it mongodb-v1-69b68dbd4f-qfpsj -- sh
 
+mongosh
+
+show dbs
+
+use test
+
+show collections
+
+db.ratings.find().pretty()
+
+
+# Check Database MySQL
+
+
+```
 
 
 
