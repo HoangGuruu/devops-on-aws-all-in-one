@@ -31,7 +31,7 @@ aws eks update-kubeconfig --region  us-east-1 --name devops-on-aws-all-in-one-pr
 # Kubectl Command Line  
 
 ## Alias
-k=kubectl
+alias k=kubectl
 
 # 1 Check Basic Resource
 kubectl get nodes
