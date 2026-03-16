@@ -103,7 +103,7 @@ kubectl create secret generic ratings-mongodb-secret \
 0.0.0.0/0
 ```
 
-### Setup RDS MySQL
+### Setup RDS MySQL ( Optional )
 - Setup mysql-client to access
 ```sh
 sudo apt update
@@ -112,7 +112,8 @@ sudo apt install mysql-client -y
 
 - Connect to MySQL
 ```sh
-mysql -h devops-on-aws-all-in-one.c1zlkclvaugn.us-east-1.rds.amazonaws.com -P 3306 -u admin -p'Q6n2:8ymc9LdPTi'
+mysql -h <host> -P 3306 -u admin -p
+
 ```
 
 - Add data
@@ -135,6 +136,6 @@ SELECT * FROM ratings;
 ```sh
 # MYSQL
 kubectl create secret generic ratings-mysql-password \
-  --from-literal=MYSQL_DB_PASSWORD='password'
+  --from-literal=MYSQL_DB_PASSWORD='YourStrongPassword123!'
 
 ```
