@@ -22,27 +22,27 @@ jobs:
         include:
           - deployment: productpage-v1
             image_name: productpage
-            container_name: productpage
+            container: productpage
 
           - deployment: details-v1
             image_name: details
-            container_name: details
+            container: details
 
           - deployment: ratings-v1
             image_name: ratings
-            container_name: ratings
+            container: ratings
 
           - deployment: reviews-v1
             image_name: reviews
-            container_name: reviews
+            container: reviews
 
           - deployment: reviews-v2
             image_name: reviews
-            container_name: reviews
+            container: reviews
 
           - deployment: reviews-v3
             image_name: reviews
-            container_name: reviews
+            container: reviews
 
     steps:
       - name: Checkout
