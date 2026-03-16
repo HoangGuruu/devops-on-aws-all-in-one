@@ -66,8 +66,7 @@ jobs:
 
       - name: Update deployment image
         run: |
-          kubectl set image deployment/${{ matrix.deployment }} ${{ matrix.container }}=736059458620.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ matrix.image_name }}-${{ github.event.workflow_run.head_sha }} \
-            -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/${{ matrix.deployment }} ${{ matrix.container }}=736059458620.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ matrix.image_name }}-${{ github.event.workflow_run.head_sha }} -n ${{ env.NAMESPACE }}
 
       - name: Check rollout status
         run: |
