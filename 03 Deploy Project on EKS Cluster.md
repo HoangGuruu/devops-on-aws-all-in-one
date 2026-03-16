@@ -112,7 +112,7 @@ sudo apt install mysql-client -y
 
 - Connect to MySQL
 ```sh
-mysql -h mydb.abc123.ap-southeast-1.rds.amazonaws.com -P 3306 -u admin -p
+mysql -h devops-on-aws-all-in-one.c1zlkclvaugn.us-east-1.rds.amazonaws.com -P 3306 -u admin -p'Q6n2:8ymc9LdPTi'
 ```
 
 - Add data
