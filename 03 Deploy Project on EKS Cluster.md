@@ -2,7 +2,7 @@
 
 ## Deploy Project on EKS Cluster
 
-### Deploy Book App version 1 
+### Deploy Book App 
 
 - Setup permission to pull image from ECR
 ```sh
@@ -78,5 +78,23 @@ SELECT * FROM ratings;
 
 ```
 
+### Setup MongoDB and MySQL in Real Case
 
+- You can check here 
+[MongoDB Cloud](https://cloud.mongodb.com/)
 
+- Create collection ratings 
+
+- Add data
+
+```sh
+[
+  { "rating": 5 },
+  { "rating": 2 }
+]
+```
+- Setup secret again
+```sh
+kubectl create secret generic ratings-mongodb-secret \
+  --from-literal=MONGO_DB_URL='mongodb+srv://devops_db_user:vVY8PYxmDuJ0BNGq@devops-on-aws.zrr4zku.mongodb.net/?appName=devops-on-aws'
+```
