@@ -12,11 +12,37 @@ env:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [productpage, reviews, ratings, details]
+        include:
+          - deployment: productpage-v1
+            image_name: productpage
+            container_name: productpage
+
+          - deployment: details-v1
+            image_name: details
+            container_name: details
+
+          - deployment: ratings-v1
+            image_name: ratings
+            container_name: ratings
+
+          - deployment: reviews-v1
+            image_name: reviews
+            container_name: reviews
+
+          - deployment: reviews-v2
+            image_name: reviews
+            container_name: reviews
+
+          - deployment: reviews-v3
+            image_name: reviews
+            container_name: reviews
 
     steps:
       - name: Checkout
@@ -35,14 +61,16 @@ jobs:
       - name: Set kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          printf '%s' "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
 
       - name: Update deployment image
         run: |
-          kubectl set image deployment/${{ matrix.service }} \
-            ${{ matrix.service }}=736059458620.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ matrix.service }}-${{ github.event.workflow_run.head_sha }} \
+          kubectl set image deployment/${{ matrix.deployment }} \
+            ${{ matrix.container }}=736059458620.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ matrix.image_name }}-${{ github.event.workflow_run.head_sha }} \
             -n ${{ env.NAMESPACE }}
 
       - name: Check rollout status
         run: |
-          kubectl rollout status deployment/${{ matrix.service }} -n ${{ env.NAMESPACE }} --timeout=180s
+          kubectl rollout status deployment/${{ matrix.deployment }} \
+            -n ${{ env.NAMESPACE }} --timeout=180s
