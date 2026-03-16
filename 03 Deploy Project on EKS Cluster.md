@@ -78,7 +78,7 @@ SELECT * FROM ratings;
 
 ```
 
-### Setup MongoDB and MySQL in Real Case
+### Setup MongoDB Cloud
 
 - You can check here 
 [MongoDB Cloud](https://cloud.mongodb.com/)
@@ -97,4 +97,38 @@ SELECT * FROM ratings;
 ```sh
 kubectl create secret generic ratings-mongodb-secret \
   --from-literal=MONGO_DB_URL='mongodb+srv://devops_db_user:vVY8PYxmDuJ0BNGq@devops-on-aws.zrr4zku.mongodb.net/?appName=devops-on-aws'
+```
+- Setup Access to test on MongoDB
+```sh
+0.0.0.0/0
+```
+
+### Setup RDS MySQL
+- Connect to MySQL
+```sh
+mysql -h mydb.abc123.ap-southeast-1.rds.amazonaws.com -P 3306 -u admin -p
+```
+
+- Add data
+```sh
+CREATE DATABASE test;
+USE test;
+
+CREATE TABLE `ratings` (
+  `ReviewID` INT NOT NULL,
+  `Rating` INT,
+  PRIMARY KEY (`ReviewID`)
+);
+INSERT INTO ratings (ReviewID, Rating) VALUES (1, 4);
+INSERT INTO ratings (ReviewID, Rating) VALUES (2, 1);
+
+
+SELECT * FROM ratings;
+```
+- Create again secret
+```sh
+# MYSQL
+kubectl create secret generic ratings-mysql-password \
+  --from-literal=MYSQL_DB_PASSWORD='password'
+
 ```
