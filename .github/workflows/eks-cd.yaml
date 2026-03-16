@@ -8,7 +8,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: prod/devops-on-aws-all-in-one
-  NAMESPACE: bookinfo
+  NAMESPACE: default
 
 jobs:
   deploy:
