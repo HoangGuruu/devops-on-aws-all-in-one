@@ -27,7 +27,6 @@ terraform destroy -var-file="terraform.develop.tfvars" -auto-approve
 ```sh
 # Connect EKS Cluster
 aws eks update-kubeconfig --region  us-east-1 --name devops-on-aws-all-in-one-prod-eks-01
-
 # Kubectl Command Line  
 
 ## Alias
