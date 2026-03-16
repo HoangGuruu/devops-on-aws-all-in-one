@@ -2,160 +2,122 @@
 
 ## Setup CI/CD
 
-### 
-
-- 
-[Install Docker on Ubuntu](https://www.google.com)
-
-
-# ArgoCD - admin - 8EURCCN7Mz0UeGdn
-
-helm repo add argo https://argoproj.github.io/argo-helm
-helm repo update
-
-kubectl create namespace argocd
-
-helm install argocd argo/argo-cd \
-  --namespace argocd \
-  --set redis.persistence.enabled=false \
-  --set controller.metrics.enabled=true \
-  --set repoServer.persistence.enabled=false \
-  --set server.extraArgs="{--insecure}" \
-  --set server.ingress.enabled=false \
-  --set configs.cm."application\.instanceLabelKey"="argocd.argoproj.io/instance"
-
-
-## Ingress
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: argocd-ingress
-  namespace: argocd
-  annotations:
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: argocd.hoangguruu.id.vn
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: argocd-server
-                port:
-                  name: https
-
-
-# 
+### Setup KUBECONFIG secret
+```sh
+aws eks update-kubeconfig --region  us-east-1 --name devops-on-aws-all-in-one-prod-eks-01
+cat ~/.kube/config
 ```
 
-## Setup Tools Platform Ecosystem
+### Setup Secrets on Github
+
+
+### CI
 
 ```sh
-# CI/CD : Jenkins
+name: CI
 
-helm repo add jenkins https://charts.jenkins.io
-helm repo update
+on:
+  push:
+    branches: [main]
+  pull_request:
 
-helm install jenkins jenkins/jenkins \
-  --namespace jenkins \
-  --create-namespace \
-  --set controller.serviceType=ClusterIP \
-  --set controller.ingress.enabled=false \
-  --set controller.admin.username=admin \
-  --set controller.admin.password=admin123
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: prod/devops-on-aws-all-in-one
 
-helm install jenkins jenkins/jenkins \
-  --namespace jenkins \
-  --set controller.serviceType=ClusterIP \
-  --set controller.ingress.enabled=false \
-  --set controller.admin.username=admin \
-  --set controller.admin.password=admin123 \
-  --set persistence.enabled=false  # Không dùng Persistent Volume
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [productpage, reviews, ratings, details]
 
-helm install jenkins jenkins/jenkins \
-  --namespace jenkins \
-  --set persistence.existingClaim="" \
-  --set persistence.storageClass="" \
-  --set persistence.volumes[0].name=jenkins-data \
-  --set persistence.volumes[0].hostPath.path="/data/jenkins" \
-  --set persistence.volumeMounts[0].mountPath="/var/jenkins_home" \
-  --set persistence.volumeMounts[0].name=jenkins-data
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Configure AWS credentials from GitHub Secrets
+        if: github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-## Ingress
+      - name: Login to Amazon ECR
+        if: github.event_name == 'push'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: jenkins-ingress
-  namespace: jenkins
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: letsencrypt-prod  # Nếu bạn dùng SSL, nếu không có thì bỏ dòng này
-spec:
-  ingressClassName: nginx
-  tls:
-  - hosts:
-    - jenkins.hoangguruu.id.vn  # ⚠️ Thay bằng domain của bạn
-    secretName: jenkins-tls
-  rules:
-  - host: jenkins.hoangguruu.id.vn  # ⚠️ Thay bằng domain của bạn
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: jenkins
-            port:
-              number: 8080
+      - name: Build only for PR
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: false
+          tags: local/${{ matrix.service }}:test
 
+      - name: Build and Push
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ matrix.service }}-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ matrix.service }}-latest
+```
 
-kubectl get secret jenkins -n jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 -d && echo
+### CD
 
-# Log : ELK
+```sh
+name: CD
 
-# Monitoring : Grafana - Prometheus ( Custom more ) Loki
-prom-operator
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: prod/devops-on-aws-all-in-one
+  NAMESPACE: bookinfo
 
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [productpage, reviews, ratings, details]
 
-helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-## Ingress
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: grafana-ingress
-  namespace: monitoring
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: grafana.yourdomain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: kube-prometheus-stack-grafana
-            port:
-              number: 80
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
 
+      - name: Set kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
-# Splunk
+      - name: Update deployment image
+        run: |
+          kubectl set image deployment/${{ matrix.service }} \
+            ${{ matrix.service }}=736059458620.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ matrix.service }}-${{ github.event.workflow_run.head_sha }} \
+            -n ${{ env.NAMESPACE }}
+
+      - name: Check rollout status
+        run: |
+          kubectl rollout status deployment/${{ matrix.service }} -n ${{ env.NAMESPACE }} --timeout=180s
 
 ```

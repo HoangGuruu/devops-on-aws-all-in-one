@@ -1,0 +1,48 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: prod/devops-on-aws-all-in-one
+  NAMESPACE: bookinfo
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [productpage, reviews, ratings, details]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Update deployment image
+        run: |
+          kubectl set image deployment/${{ matrix.service }} \
+            ${{ matrix.service }}=736059458620.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ matrix.service }}-${{ github.event.workflow_run.head_sha }} \
+            -n ${{ env.NAMESPACE }}
+
+      - name: Check rollout status
+        run: |
+          kubectl rollout status deployment/${{ matrix.service }} -n ${{ env.NAMESPACE }} --timeout=180s
