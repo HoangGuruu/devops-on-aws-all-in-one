@@ -19,6 +19,8 @@ export PATH=$PWD/bin:$PATH
 - Install Istio
 
 ```sh
+istioctl install -f bookinfo/gateway-api/demo-profile-no-gateways.yaml -y
+
 kubectl label namespace default istio-injection=enabled
 ```
 - Install the Kubernetes Gateway API CRDs
@@ -37,6 +39,8 @@ kubectl apply -f samples/bookinfo/gateway-api/bookinfo-gateway.yaml
 - Change the service type to ClusterIP by annotating the gateway:
 ```sh
 kubectl annotate gateway bookinfo-gateway networking.istio.io/service-type=ClusterIP --namespace=default
+
+kubectl get gateway
 ```
 - Access the application
 ```sh
@@ -47,4 +51,11 @@ kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway  8080:80
 ```sh
 kubectl apply -f samples/addons/kiali.yaml
 kubectl rollout status deployment/kiali -n istio-system
+
+istioctl dashboard kiali
+
+for i in $(seq 1 100); do curl -s -o /dev/null "http://$GATEWAY_URL/productpage"; done
+
 ```
+```
+istioctl dashboard kiali
