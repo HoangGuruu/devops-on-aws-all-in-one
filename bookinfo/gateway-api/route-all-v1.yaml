@@ -10,7 +10,7 @@ spec:
     port: 9080
   rules:
   - backendRefs:
-    - name: reviews
+    - name: reviews-v1
       port: 9080
 ---
 apiVersion: gateway.networking.k8s.io/v1
