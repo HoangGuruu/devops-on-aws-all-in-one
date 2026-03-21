@@ -44,7 +44,7 @@ kubectl get gateway
 ```
 - Access the application
 ```sh
-kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway  8080:80
+kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway-istio  8080:80
 ```
 ### View the dashboard kiali
 
@@ -52,10 +52,15 @@ kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway  8080:80
 kubectl apply -f samples/addons/kiali.yaml
 kubectl rollout status deployment/kiali -n istio-system
 
-istioctl dashboard kiali
+kubectl -n istio-system port-forward --address 0.0.0.0 svc/kiali 20001:20001
 
 for i in $(seq 1 100); do curl -s -o /dev/null "http://$GATEWAY_URL/productpage"; done
 
 ```
-```
-istioctl dashboard kiali
+
+```sh
+
+kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway-istio  8080:80
+kubectl port-forward --address 0.0.0.0 svc/kiali -n istio-system 8081:20001
+kubectl port-forward --address 0.0.0.0 svc/grafana -n istio-system 8082:3000
+kubectl port-forward --address 0.0.0.0 svc/prometheus -n istio-system  8083:9090
