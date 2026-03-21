@@ -52,10 +52,21 @@ kubectl get gateway
 kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway-istio  8080:80
 ```
 ### Access by LoadBalancer
+- Check gateway and httproute
 ```sh
 kubectl get gateway
 kubectl get httproute
 kubectl describe httproute bookinfo
+```
+
+- Apply route version
+```sh
+# Create service for reviews v1 v2 v3
+k apply -f bookinfo/platform/istio-v1-v2-v3/
+# Create http route v1 
+k apply -f bookinfo/gateway-api/route-all-v1.yaml
+# Create http route v2
+
 ```
 
 ### View the dashboard kiali
