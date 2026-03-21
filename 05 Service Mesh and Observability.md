@@ -75,7 +75,7 @@ k apply -f bookinfo/gateway-api/route-reviews-v3.yaml
 k delete httproute reviews-v3
 k apply -f bookinfo/gateway-api/route-reviews-v1-v3.yaml
 # Create http route v1-v2 90-10
-k delete httproute reviews-v2
+k delete httproute reviews-v1-v3
 k apply -f bookinfo/gateway-api/route-reviews-v1-v2-90-10.yaml
 ```
 
