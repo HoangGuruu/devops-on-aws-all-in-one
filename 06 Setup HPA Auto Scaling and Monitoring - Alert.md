@@ -5,7 +5,14 @@
 [Setup HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
 
 ```sh
-kubectl autoscale deployment productpage-v1 --cpu=50% --min=1 --max=10
+kubectl autoscale deployment productpage-v1 --cpu=50% --min=1 --max=5
 
 kubectl get hpa
+
+kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://ad6f4ffdc1ef444adbb8fe01273b875f-1681816667.us-east-1.elb.amazonaws.com/productpage; done"
+
+# Delete Force when you want
+kubectl delete pod load-generator --grace-period=0 --force
+
+kubectl get hpa productpage-v1 --watch
 ```

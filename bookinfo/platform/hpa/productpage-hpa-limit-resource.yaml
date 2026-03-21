@@ -58,9 +58,9 @@ spec:
         - containerPort: 9080
         resources:
           limits:
-            cpu: 100m
+            cpu: 200m
           requests:
-            cpu: 50m
+            cpu: 100m
         volumeMounts:
         - name: tmp
           mountPath: /tmp
