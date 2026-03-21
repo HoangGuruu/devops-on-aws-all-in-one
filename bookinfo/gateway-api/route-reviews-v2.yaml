@@ -10,5 +10,5 @@ spec:
     port: 9080
   rules:
   - backendRefs:
-    - name: reviews-v1
+    - name: reviews-v2
       port: 9080
