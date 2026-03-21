@@ -83,11 +83,21 @@ k apply -f bookinfo/gateway-api/route-reviews-v1-v2-90-10.yaml
 [Setup Kiali](https://istio.io/latest/docs/setup/getting-started/#download)
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/kiali.yaml
+
+
+## Want to Access with Token
+curl -L https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/kiali.yaml \
+| sed 's/strategy: anonymous/strategy: token/' \
+| kubectl apply -f -
+
 kubectl rollout status deployment/kiali -n istio-system
 
+# kubectl delete -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/kiali.yaml
+
+kubectl -n istio-system create token kiali
 kubectl -n istio-system port-forward --address 0.0.0.0 svc/kiali 8001:20001
 
-for i in $(seq 1 100); do curl -s -o /dev/null "http://$GATEWAY_URL/productpage"; done
+for i in $(seq 1 100); do curl -s -o /dev/null "http://ad6f4ffdc1ef444adbb8fe01273b875f-1681816667.us-east-1.elb.amazonaws.com/productpage"; done
 
 ```
 
@@ -95,18 +105,15 @@ for i in $(seq 1 100); do curl -s -o /dev/null "http://$GATEWAY_URL/productpage"
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/prometheus.yaml
 
+# kubectl delete -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/prometheus.yaml
 ```
 
 [Setup Grafana](https://istio.io/latest/docs/ops/integrations/grafana/)
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/grafana.yaml
 
-kubectl port-forward --address 0.0.0.0 svc/grafana -n istio-system 8082:3000
+# kubectl delete -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/grafana.yaml
 
-```
-
-[Setup Jaeger](https://istio.io/latest/docs/ops/integrations/jaeger/)
-```sh
-kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/jaeger.yaml
+kubectl -n istio-system port-forward --address 0.0.0.0 svc/grafana  3000:3000
 
 ```
