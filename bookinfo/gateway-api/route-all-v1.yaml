@@ -6,7 +6,7 @@ spec:
   parentRefs:
   - group: ""
     kind: Service
-    name: reviews-v1
+    name: reviews
     port: 9080
   rules:
   - backendRefs:
