@@ -5,6 +5,7 @@
 # Count Pods in Cluster
 kubectl get pod -A --no-headers | wc -l
 ```
+[How maxPods is determined](https://docs.aws.amazon.com/eks/latest/userguide/choosing-instance-type.html)
 
 ### Setup Istio and Apply
 
