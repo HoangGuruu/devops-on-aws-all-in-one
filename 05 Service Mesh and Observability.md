@@ -66,7 +66,17 @@ k apply -f bookinfo/platform/istio-v1-v2-v3/
 # Create http route v1 
 k apply -f bookinfo/gateway-api/route-all-v1.yaml
 # Create http route v2
-
+k delete httproute reviews-v1
+k apply -f bookinfo/gateway-api/route-reviews-v2.yaml
+# Create http route v3
+k delete httproute reviews-v2
+k apply -f bookinfo/gateway-api/route-reviews-v3.yaml
+# Create http route v1-v3 50/50
+k delete httproute reviews-v3
+k apply -f bookinfo/gateway-api/route-reviews-v1-v3.yaml
+# Create http route v1-v2 90-10
+k delete httproute reviews-v2
+k apply -f bookinfo/gateway-api/route-reviews-v1-v2-90-10.yaml
 ```
 
 ### View the dashboard kiali
