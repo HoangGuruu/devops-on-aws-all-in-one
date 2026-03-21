@@ -56,15 +56,16 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 9080
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
         volumeMounts:
         - name: tmp
           mountPath: /tmp
       volumes:
       - name: tmp
         emptyDir: {}
-      resources:
-          limits:
-            cpu: 500m
-          requests:
-            cpu: 200m
+      
 
