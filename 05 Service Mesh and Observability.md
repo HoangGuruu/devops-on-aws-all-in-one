@@ -1,6 +1,10 @@
 # DevOps on AWS Real Project - All In One
 
-## Deployment Stragegy
+## Service Mesh and Observability
+```sh
+# Count Pods in Cluster
+kubectl get pod -A --no-headers | wc -l
+```
 
 ### Setup Istio and Apply
 
@@ -64,3 +68,4 @@ kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway-istio  8080:80
 kubectl port-forward --address 0.0.0.0 svc/kiali -n istio-system 8081:20001
 kubectl port-forward --address 0.0.0.0 svc/grafana -n istio-system 8082:3000
 kubectl port-forward --address 0.0.0.0 svc/prometheus -n istio-system  8083:9090
+```
