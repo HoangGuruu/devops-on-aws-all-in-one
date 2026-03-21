@@ -9,7 +9,7 @@ kubectl get pod -A --no-headers | wc -l
 
 ### Setup Istio and Apply
 
-[Setup Istio on Ubuntu](https://istio.io/latest/docs/setup/getting-started/#download)
+[Setup Istio](https://istio.io/latest/docs/setup/getting-started/#download)
 
 - Download Istio
 ```sh
@@ -79,22 +79,34 @@ k delete httproute reviews-v1-v3
 k apply -f bookinfo/gateway-api/route-reviews-v1-v2-90-10.yaml
 ```
 
-### View the dashboard kiali
-
+### Setup Monitoring Tools
+[Setup Kiali](https://istio.io/latest/docs/setup/getting-started/#download)
 ```sh
-kubectl apply -f samples/addons/kiali.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/kiali.yaml
 kubectl rollout status deployment/kiali -n istio-system
 
-kubectl -n istio-system port-forward --address 0.0.0.0 svc/kiali 20001:20001
+kubectl -n istio-system port-forward --address 0.0.0.0 svc/kiali 8001:20001
 
 for i in $(seq 1 100); do curl -s -o /dev/null "http://$GATEWAY_URL/productpage"; done
 
 ```
 
+[Setup Prometheus](https://istio.io/latest/docs/ops/integrations/prometheus/)
 ```sh
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/prometheus.yaml
 
-kubectl port-forward --address 0.0.0.0 svc/bookinfo-gateway-istio  8080:80
-kubectl port-forward --address 0.0.0.0 svc/kiali -n istio-system 8081:20001
+```
+
+[Setup Grafana](https://istio.io/latest/docs/ops/integrations/grafana/)
+```sh
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/grafana.yaml
+
 kubectl port-forward --address 0.0.0.0 svc/grafana -n istio-system 8082:3000
-kubectl port-forward --address 0.0.0.0 svc/prometheus -n istio-system  8083:9090
+
+```
+
+[Setup Jaeger](https://istio.io/latest/docs/ops/integrations/jaeger/)
+```sh
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/jaeger.yaml
+
 ```
