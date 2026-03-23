@@ -39,11 +39,11 @@ kubectl apply -f bookinfo/platform/kube/
 ```
 - Create a Kubernetes Gateway for the Bookinfo application:
 ```sh
-kubectl apply -f samples/bookinfo/gateway-api/bookinfo-gateway.yaml
+kubectl apply -f bookinfo/gateway-api/bookinfo-gateway.yaml
 ```
 - Change the service type to ClusterIP by annotating the gateway:
 ```sh
-kubectl annotate gateway bookinfo-gateway networking.istio.io/service-type=ClusterIP --namespace=default
+# kubectl annotate gateway bookinfo-gateway networking.istio.io/service-type=ClusterIP --namespace=default
 
 kubectl get gateway
 ```
@@ -115,5 +115,9 @@ kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.29/samp
 # kubectl delete -f https://raw.githubusercontent.com/istio/istio/release-1.29/samples/addons/grafana.yaml
 
 kubectl -n istio-system port-forward --address 0.0.0.0 svc/grafana  3000:3000
+
+# Access Infor Default
+# Username : admin
+# Password : admin
 
 ```
