@@ -6,7 +6,7 @@
 - When Domain is actived ( Waiting )
 
 ### Setup cert-manager
-[Setup vert-manager](https://cert-manager.io/docs/installation/kubectl/)
+[Setup cert-manager](https://cert-manager.io/docs/installation/kubectl/)
 
 ```sh
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.0/cert-manager.yaml
@@ -51,4 +51,7 @@ kubectl edit configmap grafana -n istio-system
 [server]
 domain = grafana.hoangguruu.site
 root_url = https://grafana.hoangguruu.site/
+
+kubectl rollout restart deployment grafana -n istio-system
+kubectl rollout status deployment grafana -n istio-system
 ```
