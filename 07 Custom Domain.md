@@ -65,3 +65,13 @@ root_url = https://grafana.hoangguruu.site/
 kubectl rollout restart deployment grafana -n istio-system
 kubectl rollout status deployment grafana -n istio-system
 ```
+### Clean
+```sh
+kubectl delete certificate public-sites-cert -n default --ignore-not-found=true
+kubectl delete certificaterequest,order,challenge -n default --all
+kubectl delete secret public-sites-tls -n default --ignore-not-found=true
+kubectl delete clusterissuer letsencrypt-prod --ignore-not-found=true
+
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.0/cert-manager.yaml
+kubectl delete namespace cert-manager --ignore-not-found=true
+```
