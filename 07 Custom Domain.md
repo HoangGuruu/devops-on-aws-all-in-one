@@ -10,6 +10,9 @@
 
 ```sh
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.0/cert-manager.yaml
+# Enable gateway-api to use 
+kubectl patch deployment cert-manager -n cert-manager --type='json' \
+  -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-gateway-api"}]'
 
 kubectl get pods --namespace cert-manager
 ```
@@ -17,12 +20,19 @@ kubectl get pods --namespace cert-manager
 - Apply `clusterissuer.yaml`
 ```sh
 kubectl apply -f clusterissuer.yaml
+k get clusterissuer
 ```
 - Create Certificate
 ```sh
 kubectl apply -f certificate.yaml
 
 kubectl get certificate -n default
+# Check status Progress
+kubectl get certificaterequest,order,challenge -n default
+kubectl describe certificaterequest public-sites-cert-1 -n default
+kubectl get challenge -n default
+kubectl describe challenge <name-challenge> -n default
+
 kubectl describe certificate public-sites-cert -n default
 kubectl get secret public-sites-tls -n default
 ```
