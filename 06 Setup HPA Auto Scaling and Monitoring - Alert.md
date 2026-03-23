@@ -16,6 +16,10 @@ kubectl top node
 [Setup HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
 
 ```sh
+# Change Deployment to HPA
+k apply -f bookinfo/platform/hpa/productpage-hpa-limit-resource.yaml
+
+
 # Default 5m to scale down
 # kubectl autoscale deployment productpage-v1 --cpu=50% --min=1 --max=5
 
@@ -24,7 +28,7 @@ k apply -f bookinfo/platform/hpa/hpa.yaml
 
 kubectl get hpa
 
-kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://ad6f4ffdc1ef444adbb8fe01273b875f-1681816667.us-east-1.elb.amazonaws.com/productpage; done"
+kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://a6d292b799c5a46228d5f015989a8a52-1959528387.us-east-1.elb.amazonaws.com/productpage; done"
 
 # Delete Force when you want - If pod not terminated
 kubectl delete pod load-generator --grace-period=0 --force
@@ -33,6 +37,8 @@ kubectl get hpa productpage-v1 --watch
 ```
 
 ## Setup Dashboard to check CPU
+
+[Webhook API Slack](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/)
 
 - Check Datasource Prometheus `container_cpu_usage_seconds_total`
 
