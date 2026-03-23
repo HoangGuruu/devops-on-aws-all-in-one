@@ -3,68 +3,52 @@
 ## Custom Domain
 
 ### Setup Domain from vendor to Cloudflare
+- When Domain is actived ( Waiting )
 
-### Setup Ingress Nginx Controller
-
-- You can reference this way
-[Setup Ingress Nginx Controller](https://kubernetes.github.io/ingress-nginx/deploy/)
-
-```sh
-helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
-
-helm uninstall ingress-nginx --namespace ingress-nginx
-
-
-```
-#### Installing cert-manager
-- You can reference this way
-[Installing cert-manager ](https://cert-manager.io/docs/installation/)
+### Setup cert-manager
+[Setup vert-manager](https://cert-manager.io/docs/installation/kubectl/)
 
 ```sh
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-helm install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --set installCRDs=true
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.0/cert-manager.yaml
 
-# Uninstall
-helm uninstall cert-manager --namespace cert-manager
-
+kubectl get pods --namespace cert-manager
 ```
-
-#### Create file cluster-issuer.yaml:
+### Create ClusterIssuer with Let’s Encrypt
+- Apply `clusterissuer.yaml`
 ```sh
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: hoangguruu@gmail.com 
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-    - http01:
-        ingress:
-          class: nginx
+kubectl apply -f clusterissuer.yaml
+```
+- Create Certificate
+```sh
+kubectl apply -f certificate.yaml
+
+kubectl get certificate -n default
+kubectl describe certificate public-sites-cert -n default
+kubectl get secret public-sites-tls -n default
 ```
 
+## Apply Gateway and httproute 
 ```sh
-# The ClusterIssuer defines how cert-manager will request certificates
-kubectl apply -f eks/cluster-issuer.yaml
-kubectl get clusterissuer
-```
-#### Run Nginx Testing App
-```sh
-kubectl apply -f eks/app-test.yaml
-kubectl get pod
-kubectl get svc
-kubectl get ingress
-kubectl get certificate -A
-kubectl describe certificate hoangguruu-id-vn-tls
-```
-##### Notice: 
-Cloudflare: SSL/TLS encryption - Current encryption mode: Full
+## All 
+kubectl apply -f bookinfo/gateway-domain/gateway-domain.yaml
+kubectl get gateway -n default
+kubectl describe gateway public-gateway -n default
 
+# Bookinfo
+kubectl apply -f bookinfo/gateway-domain/httproute-bookinfo.yaml
+kubectl describe httproute bookinfo-route -n default
+# Grafana
+kubectl apply -f bookinfo/gateway-domain/httproute-bookinfo.yaml
+kubectl describe httproute grafana-route -n istio-system
+
+kubectl get httproute -A
+
+```
+### Setup Config with Grafana
+```sh
+kubectl edit configmap grafana -n istio-system
+
+[server]
+domain = grafana.hoangguruu.site
+root_url = https://grafana.hoangguruu.site/
+```

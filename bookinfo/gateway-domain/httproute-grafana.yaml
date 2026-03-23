@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana-route
+  namespace: istio-system
+spec:
+  parentRefs:
+  - name: public-gateway
+    namespace: default
+    sectionName: https-grafana
+  - name: public-gateway
+    namespace: default
+    sectionName: http-grafana
+  hostnames:
+  - "grafana.hoangguruu.site"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: grafana
+      port: 3000
