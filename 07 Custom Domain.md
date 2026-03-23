@@ -19,13 +19,13 @@ kubectl get pods --namespace cert-manager
 ### Create ClusterIssuer with Let’s Encrypt
 - Apply `clusterissuer.yaml`
 ```sh
-kubectl apply -f clusterissuer.yaml
+kubectl apply -f bookinfo/gateway-domain/clusterissuer.yaml
 k get clusterissuer
 ```
 - Create Certificate
 ```sh
-kubectl apply -f bookinfo-certificate.yaml
-
+kubectl apply -f bookinfo/gateway-domain/certificate.yaml
+# After add RECORD
 kubectl get certificate -n default
 # Check status Progress
 kubectl get certificaterequest,order,challenge -n default
