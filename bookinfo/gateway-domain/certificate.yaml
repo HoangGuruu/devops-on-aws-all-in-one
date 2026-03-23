@@ -10,4 +10,4 @@ spec:
     kind: ClusterIssuer
   dnsNames:
   - bookinfo.hoangguruu.site
-  - grafana.hoangguruu.site
+  # - grafana.hoangguruu.site

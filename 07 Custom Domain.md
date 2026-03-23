@@ -24,7 +24,7 @@ k get clusterissuer
 ```
 - Create Certificate
 ```sh
-kubectl apply -f certificate.yaml
+kubectl apply -f bookinfo-certificate.yaml
 
 kubectl get certificate -n default
 # Check status Progress
@@ -67,6 +67,8 @@ kubectl rollout status deployment grafana -n istio-system
 ```
 ### Clean
 ```sh
+kubectl delete -f bookinfo/gateway-domain/
+
 kubectl delete certificate public-sites-cert -n default --ignore-not-found=true
 kubectl delete certificaterequest,order,challenge -n default --all
 kubectl delete secret public-sites-tls -n default --ignore-not-found=true
