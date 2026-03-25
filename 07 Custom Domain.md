@@ -22,27 +22,30 @@ kubectl get pods --namespace cert-manager
 kubectl apply -f bookinfo/gateway-domain/clusterissuer.yaml
 k get clusterissuer
 ```
-- Create Certificate
+### Add RECORDS ON Cloudflare
+
+### Create Certificate and Apply Gateway
 ```sh
 kubectl apply -f bookinfo/gateway-domain/certificate.yaml
+kubectl apply -f bookinfo/gateway-domain/gateway-domain.yaml
+
 # After add RECORD
 kubectl get certificate -n default
 # Check status Progress
 kubectl get certificaterequest,order,challenge -n default
 kubectl describe certificaterequest public-sites-cert-1 -n default
 kubectl get challenge -n default
-kubectl describe challenge <name-challenge> -n default
+kubectl describe challenge public-sites-cert-1-2682165426-2483273916 -n default
 
 kubectl describe certificate public-sites-cert -n default
 kubectl get secret public-sites-tls -n default
-```
 
-## Apply Gateway and httproute 
-```sh
-## All 
-kubectl apply -f bookinfo/gateway-domain/gateway-domain.yaml
 kubectl get gateway -n default
 kubectl describe gateway public-gateway -n default
+```
+
+## Apply httproute 
+```sh
 
 # Bookinfo
 kubectl apply -f bookinfo/gateway-domain/httproute-bookinfo.yaml
@@ -76,4 +79,4 @@ kubectl delete clusterissuer letsencrypt-prod --ignore-not-found=true
 
 kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.0/cert-manager.yaml
 kubectl delete namespace cert-manager --ignore-not-found=true
-```
+``` 

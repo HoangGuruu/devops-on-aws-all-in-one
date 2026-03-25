@@ -5,12 +5,12 @@ metadata:
   namespace: default
 spec:
   parentRefs:
-  - name: public-gateway
-    namespace: default
-    sectionName: https-bookinfo
-  - name: public-gateway
+  - name: bookinfo-gateway
     namespace: default
     sectionName: http
+  - name: bookinfo-gateway
+    namespace: default
+    sectionName: https
   hostnames:
   - "bookinfo.hoangguruu.site"
   rules:
