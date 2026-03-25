@@ -12,6 +12,6 @@ spec:
     - http01:
         gatewayHTTPRoute:
           parentRefs:
-          - name: public-gateway
+          - name: shared-gateway
             namespace: default
             kind: Gateway

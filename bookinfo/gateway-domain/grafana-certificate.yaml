@@ -2,11 +2,11 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: grafana-cert
-  namespace: istio-system
+  namespace: default
 spec:
   secretName: grafana-tls
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-    - grafana.hoangguruu.site
+  - grafana.hoangguruu.site

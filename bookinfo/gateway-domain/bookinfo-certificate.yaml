@@ -1,13 +1,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: public-sites-cert
+  name: bookinfo-cert
   namespace: default
 spec:
-  secretName: public-sites-tls
+  secretName: bookinfo-tls
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
   - bookinfo.hoangguruu.site
-  - grafana.hoangguruu.site

@@ -2,10 +2,10 @@
 
 ## Custom Domain
 
-### Setup Domain from vendor to Cloudflare
+### 1 Setup Domain from vendor to Cloudflare
 - When Domain is actived ( Waiting )
 
-### Setup cert-manager
+### 2 Setup cert-manager
 [Setup cert-manager](https://cert-manager.io/docs/installation/kubectl/)
 
 ```sh
@@ -16,48 +16,45 @@ kubectl patch deployment cert-manager -n cert-manager --type='json' \
 
 kubectl get pods --namespace cert-manager
 ```
-### Create ClusterIssuer with Let’s Encrypt
+## 3 Apply Gateway and httproute 
+```sh
+# Bookinfo
+kubectl apply -f bookinfo/gateway-domain/bookinfo-gateway.yaml
+kubectl apply -f bookinfo/gateway-domain/bookinfo-httproute.yaml
+
+kubectl get gateway
+kubectl describe httproute bookinfo-route -n istio-system
+# Grafana
+kubectl apply -f bookinfo/gateway-domain/grafana-gateway.yaml
+kubectl apply -f bookinfo/gateway-domain/grafana-httproute.yaml
+
+kubectl describe httproute grafana-route -n istio-system
+```
+### 4 Add RECORDS ON Cloudflare
+
+### 5 Create ClusterIssuer with Let’s Encrypt
 - Apply `clusterissuer.yaml`
 ```sh
-kubectl apply -f bookinfo/gateway-domain/clusterissuer.yaml
+kubectl apply -f bookinfo/gateway-domain/0-clusterissuer.yaml
 k get clusterissuer
 ```
-### Add RECORDS ON Cloudflare
 
-### Create Certificate and Apply Gateway
+### 6 Create Certificate 
 ```sh
-kubectl apply -f bookinfo/gateway-domain/certificate.yaml
-kubectl apply -f bookinfo/gateway-domain/gateway-domain.yaml
-
-# After add RECORD
+# Bookinfo
+kubectl apply -f bookinfo/gateway-domain/bookinfo-certificate.yaml
 kubectl get certificate -n default
 # Check status Progress
 kubectl get certificaterequest,order,challenge -n default
-kubectl describe certificaterequest public-sites-cert-1 -n default
-kubectl get challenge -n default
-kubectl describe challenge public-sites-cert-1-2682165426-2483273916 -n default
 
-kubectl describe certificate public-sites-cert -n default
-kubectl get secret public-sites-tls -n default
-
-kubectl get gateway -n default
-kubectl describe gateway public-gateway -n default
-```
-
-## Apply httproute 
-```sh
-
-# Bookinfo
-kubectl apply -f bookinfo/gateway-domain/httproute-bookinfo.yaml
-kubectl describe httproute bookinfo-route -n default
 # Grafana
-kubectl apply -f bookinfo/gateway-domain/httproute-bookinfo.yaml
-kubectl describe httproute grafana-route -n istio-system
-
-kubectl get httproute -A
+kubectl apply -f bookinfo/gateway-domain/grafana-certificate.yaml
+kubectl get certificate -n istio-system
+# Check status Progress
+kubectl get certificaterequest,order,challenge -n istio-system
 
 ```
-### Setup Config with Grafana
+### 7 Setup Config with Grafana
 ```sh
 kubectl edit configmap grafana -n istio-system
 
@@ -68,14 +65,9 @@ root_url = https://grafana.hoangguruu.site/
 kubectl rollout restart deployment grafana -n istio-system
 kubectl rollout status deployment grafana -n istio-system
 ```
-### Clean
+### Clean 
 ```sh
 kubectl delete -f bookinfo/gateway-domain/
-
-kubectl delete certificate public-sites-cert -n default --ignore-not-found=true
-kubectl delete certificaterequest,order,challenge -n default --all
-kubectl delete secret public-sites-tls -n default --ignore-not-found=true
-kubectl delete clusterissuer letsencrypt-prod --ignore-not-found=true
 
 kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.0/cert-manager.yaml
 kubectl delete namespace cert-manager --ignore-not-found=true
