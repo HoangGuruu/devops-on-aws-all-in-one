@@ -15,10 +15,8 @@ kubectl create namespace vault
 
 helm install vault hashicorp/vault \
   -n vault \
-  --set "server.standalone.enabled=true" \
-  --set "ui.enabled=true" \
-  --set "server.dataStorage.enabled=true" \
-  --set "server.dataStorage.storageClass=gp2"
+  --set "server.dev.enabled=true" \
+  --set "ui.enabled=true"
 
 kubectl get pods -n vault
 
