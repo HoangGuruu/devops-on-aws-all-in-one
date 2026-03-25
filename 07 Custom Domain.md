@@ -15,19 +15,18 @@ kubectl patch deployment cert-manager -n cert-manager --type='json' \
   -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--enable-gateway-api"}]'
 
 kubectl get pods --namespace cert-manager
+
+kubectl get deployment cert-manager -n cert-manager --type='json' | grep enable
 ```
 ## 3 Apply Gateway and httproute 
 ```sh
-# Bookinfo
-kubectl apply -f bookinfo/gateway-domain/bookinfo-gateway.yaml
-kubectl apply -f bookinfo/gateway-domain/bookinfo-httproute.yaml
-
+kubectl apply -f bookinfo/gateway-domain/shared-gateway.yaml
 kubectl get gateway
+# Bookinfo
+kubectl apply -f bookinfo/gateway-domain/bookinfo-httproute.yaml
 kubectl describe httproute bookinfo-route -n istio-system
 # Grafana
-kubectl apply -f bookinfo/gateway-domain/grafana-gateway.yaml
 kubectl apply -f bookinfo/gateway-domain/grafana-httproute.yaml
-
 kubectl describe httproute grafana-route -n istio-system
 ```
 ### 4 Add RECORDS ON Cloudflare
