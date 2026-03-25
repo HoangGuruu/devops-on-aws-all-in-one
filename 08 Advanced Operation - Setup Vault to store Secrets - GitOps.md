@@ -2,58 +2,67 @@
 
 ## Advanced Operation
 
-###  
-## Unseal Key: x6ZXKNVYDbfYfBtvGqxBsVaJfqqQDst/UaVPc/AwpkA=
-## Root Token: root
+###  Setup Vault
+[Setup Vault](https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-raft-deployment-guide)
 
-kubectl exec -it -n vault vault-0 -- /bin/sh
-
-vault status
-vault login <token>
-vault kv put secret/myapp/config username=admin password=123456
-
-vault kv put secret/myapp/config $(cat .env | xargs)
-
-
-
-# ArgoCD - admin - 8EURCCN7Mz0UeGdn
-
-helm repo add argo https://argoproj.github.io/argo-helm
+```sh
+# Add repo
+helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update
 
-kubectl create namespace argocd
+# Create namespace
+kubectl create namespace vault
 
-helm install argocd argo/argo-cd \
-  --namespace argocd \
-  --set redis.persistence.enabled=false \
-  --set controller.metrics.enabled=true \
-  --set repoServer.persistence.enabled=false \
-  --set server.extraArgs="{--insecure}" \
-  --set server.ingress.enabled=false \
-  --set configs.cm."application\.instanceLabelKey"="argocd.argoproj.io/instance"
+helm install vault hashicorp/vault \
+  -n vault \
+  --set "server.standalone.enabled=true" \
+  --set "ui.enabled=true" \
+  --set "server.dataStorage.enabled=true" \
+  --set "server.dataStorage.storageClass=gp2"
+
+kubectl get pods -n vault
+
+kubectl exec -n vault vault-0 -- vault status
+```
+
+```sh
+# Initialize
+kubectl exec -n vault vault-0 -- vault operator init
+
+kubectl exec -n vault vault-0 -- vault operator unseal
+kubectl exec -n vault vault-0 -- vault operator unseal
+kubectl exec -n vault vault-0 -- vault operator unseal
+
+kubectl exec -it -n vault vault-0 -- sh
+export VAULT_TOKEN="ROOT_TOKEN_CUA_BAN"
+vault login $VAULT_TOKEN
+
+kubectl port-forward --address 0.0.0.0 -n vault svc/vault-ui 8200:8200
+```
+- Apply Domain
+```sh
+kubectl apply -f bookinfo/gateway-domain/vault-httproute.yaml
+kubectl describe httproute vault-route -n vault
+
+### Add RECORDS ON Cloudflare
+
+kubectl apply -f bookinfo/gateway-domain/vault-certificate.yaml
+kubectl get certificate -n default
+
+```
+###  Setup ArgoCD
+
+[Setup ArgoCD](https://argo-cd.readthedocs.io/en/stable/getting_started/)
+
+```sh
+kubectl apply -n istio-system --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 
-## Ingress
+kubectl apply -f bookinfo/gateway-domain/argocd-httproute.yaml
+kubectl describe httproute argocd-route -n istio-system
 
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: argocd-ingress
-  namespace: argocd
-  annotations:
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: argocd.hoangguruu.id.vn
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: argocd-server
-                port:
-                  name: https
+### Add RECORDS ON Cloudflare
 
+kubectl apply -f bookinfo/gateway-domain/argocd-certificate.yaml
+kubectl get certificate -n default
+```

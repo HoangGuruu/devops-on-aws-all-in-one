@@ -48,18 +48,18 @@ kubectl get certificaterequest,order,challenge -n default
 
 # Grafana
 kubectl apply -f bookinfo/gateway-domain/grafana-certificate.yaml
-kubectl get certificate -n istio-system
+kubectl get certificate
 # Check status Progress
 kubectl get certificaterequest,order,challenge -n istio-system
 
 ```
-### 7 Setup Config with Grafana
+### 7 (Optional) Setup Config with Grafana 
 ```sh
 kubectl edit configmap grafana -n istio-system
 
 [server]
 domain = grafana.hoangguruu.site
-root_url = https://grafana.hoangguruu.site/
+root_url = https://grafana.hoangguruu.site
 
 kubectl rollout restart deployment grafana -n istio-system
 kubectl rollout status deployment grafana -n istio-system
