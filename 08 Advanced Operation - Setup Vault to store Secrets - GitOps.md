@@ -10,35 +10,34 @@
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update
 
-# Create namespace
-kubectl create namespace vault
-
 helm install vault hashicorp/vault \
-  -n vault \
+  -n istio-system \
   --set "server.dev.enabled=true" \
-  --set "ui.enabled=true"
+  --set "ui.enabled=true" 
 
-kubectl get pods -n vault
 
-kubectl exec -n vault vault-0 -- vault status
-```
+# helm upgrade vault hashicorp/vault \
+#   -n istio-system \
+#   --set "server.dev.enabled=true" \
+#   --set "ui.enabled=true" \
+#   --set "server.extraEnvironmentVars.VAULT_ADDR=" 
 
-```sh
-# Initialize
-kubectl exec -n vault vault-0 -- vault operator init
+kubectl get pods -n istio-system
 
-kubectl exec -n vault vault-0 -- vault operator unseal
-kubectl exec -n vault vault-0 -- vault operator unseal
-kubectl exec -n vault vault-0 -- vault operator unseal
+kubectl exec -n istio-system vault-0 -- vault status
 
-kubectl exec -it -n vault vault-0 -- sh
-export VAULT_TOKEN="ROOT_TOKEN_CUA_BAN"
-vault login $VAULT_TOKEN
+kubectl logs -n istio-system vault-0
+# Root Token: root
 
 kubectl port-forward --address 0.0.0.0 -n vault svc/vault-ui 8200:8200
+
 ```
 - Apply Domain
 ```sh
+
+# Edit and run again
+kubectl apply -f bookinfo/gateway-domain/shared-gateway.yaml
+
 kubectl apply -f bookinfo/gateway-domain/vault-httproute.yaml
 kubectl describe httproute vault-route -n vault
 
@@ -55,6 +54,20 @@ kubectl get certificate -n default
 ```sh
 kubectl apply -n istio-system --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
+# Simple Setup
+kubectl -n istio-system patch configmap argocd-cmd-params-cm \
+  --type merge \
+  -p '{"data":{"server.insecure":"true"}}'
+
+kubectl rollout restart deployment argocd-server -n istio-system
+
+## Username: admin
+## Password:
+kubectl -n istio-system get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d; echo
+
+# Edit and run again
+kubectl apply -f bookinfo/gateway-domain/shared-gateway.yaml
 
 kubectl apply -f bookinfo/gateway-domain/argocd-httproute.yaml
 kubectl describe httproute argocd-route -n istio-system

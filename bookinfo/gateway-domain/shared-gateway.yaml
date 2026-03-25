@@ -65,3 +65,23 @@ spec:
     allowedRoutes:
       namespaces:
         from: All
+
+  - name: http-vault
+    hostname: "vault.hoangguruu.site"
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: All
+
+  - name: https-vault
+    hostname: "vault.hoangguruu.site"
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: vault-tls
+    allowedRoutes:
+      namespaces:
+        from: All
