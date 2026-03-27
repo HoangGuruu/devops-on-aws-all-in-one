@@ -89,13 +89,13 @@ vault policy write ratings-policy ratings-policy.hcl
 export VAULT_ADDR=https://vault.hoangguruu.site
 vault login # root
 
-vault write auth/kubernetes/role/bookinfo-ratings \
-  bound_service_account_names=bookinfo-ratings \
+vault write auth/kubernetes/role/bookinfo-ratings-v2 \
+  bound_service_account_names=bookinfo-ratings-v2 \
   bound_service_account_namespaces=default \
   policies=ratings-policy \
   ttl=1h
 
-vault read auth/kubernetes/role/bookinfo-details
+vault read auth/kubernetes/role/bookinfo-details-v2
 
 kubectl exec -it deploy/ratings-v2 -- sh
 ls /vault/secrets

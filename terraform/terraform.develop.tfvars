@@ -23,7 +23,7 @@ cluster_endpoint_public_access_cidrs    = ["0.0.0.0/0"]
 
 # Node Group
 node_instance_type  = "t2.medium"
-node_desired_size   = 3
+node_desired_size   = 1
 node_min_size       = 1
 node_max_size       = 3
 node_ami_type = "AL2023_x86_64_STANDARD"

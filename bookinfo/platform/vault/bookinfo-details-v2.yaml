@@ -1,47 +1,48 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: bookinfo-details-v2
+  name: bookinfo-ratings-v2
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: details-v2
+  name: ratings-v2
   labels:
-    app: details
+    app: ratings
     version: v2
 spec:
   selector:
     matchLabels:
-      app: details
+      app: ratings
       version: v2
   template:
     metadata:
       labels:
-        app: details
+        app: ratings
         version: v2
       annotations:
         vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "bookinfo-details"
+        vault.hashicorp.com/role: "bookinfo-ratings"
         vault.hashicorp.com/agent-init-first: "true"
-        vault.hashicorp.com/agent-inject-secret-config: "secret/data/details"
+        vault.hashicorp.com/agent-inject-secret-config: "secret/data/ratings"
         vault.hashicorp.com/agent-inject-template-config: |
-          {{- with secret "secret/data/details" -}}
+          {{- with secret "secret/data/ratings" -}}
           export APP_MESSAGE="{{ .Data.data.APP_MESSAGE }}"
           {{- end }}
     spec:
-      serviceAccountName: bookinfo-details-v2
+      serviceAccountName: bookinfo-ratings-v2
       imagePullSecrets:
       - name: ecr-secret
       containers:
-      - name: details
-        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:details-latest
+      - name: ratings
+        image: 736059458620.dkr.ecr.us-east-1.amazonaws.com/prod/devops-on-aws-all-in-one:ratings-latest
         imagePullPolicy: Always
         command: ["/bin/sh", "-c"]
         args:
           - |
             source /vault/secrets/config
             echo "$APP_MESSAGE"
-            exec ruby details.rb 9080
+            node opt/microservices/ratings.js 9080
+
         ports:
         - containerPort: 9080
