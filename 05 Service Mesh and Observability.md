@@ -24,7 +24,7 @@ export PATH=$PWD/bin:$PATH
 - Install Istio
 
 ```sh
-istioctl install -f ../devops-on-aws-all-in-one/bookinfo/gateway-api/demo-profile-no-gateways.yaml -y
+istioctl install -f ../workspace/devops-on-aws-all-in-one/bookinfo/gateway-api/demo-profile-no-gateways.yaml -y
 
 kubectl label namespace default istio-injection=enabled
 ```

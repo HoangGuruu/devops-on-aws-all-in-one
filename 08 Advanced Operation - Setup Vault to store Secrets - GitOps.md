@@ -12,15 +12,21 @@ helm repo update
 
 helm install vault hashicorp/vault \
   -n istio-system \
+  --create-namespace \
   --set "server.dev.enabled=true" \
-  --set "ui.enabled=true" 
+  --set "server.dev.devRootToken=root" \
+  --set "ui.enabled=true" \
+  --set "injector.enabled=false"
 
 
 # helm upgrade vault hashicorp/vault \
 #   -n istio-system \
+#   --create-namespace \
 #   --set "server.dev.enabled=true" \
+#   --set "server.dev.devRootToken=root" \
 #   --set "ui.enabled=true" \
-#   --set "server.extraEnvironmentVars.VAULT_ADDR=" 
+#   --set "injector.enabled=false" \
+#   --set "server.extraEnvironmentVars.VAULT_ADDR=vault.hoangguruu.site" 
 
 kubectl get pods -n istio-system
 
@@ -39,7 +45,7 @@ kubectl port-forward --address 0.0.0.0 -n vault svc/vault-ui 8200:8200
 kubectl apply -f bookinfo/gateway-domain/shared-gateway.yaml
 
 kubectl apply -f bookinfo/gateway-domain/vault-httproute.yaml
-kubectl describe httproute vault-route -n vault
+kubectl describe httproute vault-route -n istio-system
 
 ### Add RECORDS ON Cloudflare
 
