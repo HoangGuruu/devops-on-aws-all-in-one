@@ -42,7 +42,7 @@ spec:
           - |
             source /vault/secrets/config
             echo "$APP_MESSAGE"
-            node opt/microservices/ratings.js 9080
+            node ratings.js 9080
 
         ports:
         - containerPort: 9080

@@ -97,9 +97,7 @@ vault write auth/kubernetes/role/bookinfo-ratings \
 
 vault read auth/kubernetes/role/bookinfo-ratings
 
-kubectl exec -it deploy/ratings-v2 -- sh
-ls /vault/secrets
-cat /vault/secrets/mongo
+kubectl logs -n default ratings-v2-76c58c457c-gslkk -c vault-agent-init
 ```
 
 ###  Setup ArgoCD
