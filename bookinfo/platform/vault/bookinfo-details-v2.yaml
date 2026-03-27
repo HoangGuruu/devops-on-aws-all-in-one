@@ -11,7 +11,6 @@ metadata:
     app: details
     version: v2
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: details
@@ -43,6 +42,6 @@ spec:
           - |
             source /vault/secrets/config
             echo "$APP_MESSAGE"
-            exec ruby /opt/microservices/details/details.rb 9080
+            exec ruby details.rb 9080
         ports:
         - containerPort: 9080
