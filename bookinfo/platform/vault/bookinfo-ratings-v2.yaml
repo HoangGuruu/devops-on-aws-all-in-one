@@ -22,7 +22,7 @@ spec:
         version: v2
       annotations:
         vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "bookinfo-ratings"
+        vault.hashicorp.com/role: "ratings-policy"
         vault.hashicorp.com/agent-init-first: "true"
         vault.hashicorp.com/agent-inject-secret-config: "secret/data/ratings"
         vault.hashicorp.com/agent-inject-template-config: |
