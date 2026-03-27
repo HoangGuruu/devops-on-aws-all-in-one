@@ -53,6 +53,47 @@ kubectl apply -f bookinfo/gateway-domain/vault-certificate.yaml
 kubectl get certificate -n default
 
 ```
+### Install Vault CLI on Ubuntu
+[Install Vault CLI on Ubuntu](https://developer.hashicorp.com/vault/install)
+```sh
+wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install vault
+```
+### Use Vault in BookInfo Application
+```sh
+helm upgrade vault hashicorp/vault \
+  -n istio-system \
+  --create-namespace \
+  --set "server.dev.enabled=true" \
+  --set "server.dev.devRootToken=root" \
+  --set "ui.enabled=true" \
+  --set "injector.enabled=true"
+# Check injector
+kubectl get mutatingwebhookconfiguration | grep vault
+kubectl get pods -A | grep -i injector
+
+# Save secrets in Vault
+secret/data/ratings
+MONGO_DB_URL="mongodb+srv://devops_db_user:vVY8PYxmDuJ0BNGq@devops-on-aws.zrr4zku.mongodb.net/?appName=devops-on-aws/"
+
+# Create Policy in Vault
+vault policy write ratings-policy ratings-policy.hcl
+# path "secret/data/ratings" {
+#   capabilities = ["read"]
+# }
+
+vault write auth/kubernetes/role/bookinfo-ratings \
+  bound_service_account_names=bookinfo-ratings \
+  bound_service_account_namespaces=default \
+  policies=ratings-policy \
+  ttl=1h
+
+kubectl exec -it deploy/ratings-v2 -- sh
+ls /vault/secrets
+cat /vault/secrets/mongo
+```
+
 ###  Setup ArgoCD
 
 [Setup ArgoCD](https://argo-cd.readthedocs.io/en/stable/getting_started/)
