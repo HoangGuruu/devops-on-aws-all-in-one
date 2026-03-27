@@ -76,11 +76,11 @@ kubectl get mutatingwebhookconfiguration | grep vault
 kubectl get pods -A | grep -i injector
 
 # Save secrets in Vault
-secret/data/ratings
-MONGO_DB_URL="mongodb+srv://devops_db_user:vVY8PYxmDuJ0BNGq@devops-on-aws.zrr4zku.mongodb.net/?appName=devops-on-aws/"
+secret/ratings
+MONGO_DB_URL="mongodb+srv://devops_db_user:vVY8PYxmDuJ0BNGq@devops-on-aws.zrr4zku.mongodb.net/?appName=devops-on-aws"
 
 # Create Policy in Vault
-vault policy write ratings-policy ratings-policy.hcl
+vault policy write ratings-policy bookinfo/platform/vault/ratings-policy.hcl
 # path "secret/data/ratings" {
 #   capabilities = ["read"]
 # }
@@ -97,6 +97,10 @@ vault write auth/kubernetes/role/bookinfo-ratings \
 
 vault read auth/kubernetes/role/bookinfo-ratings
 
+k apply -f bookinfo/platform/vault/bookinfo-ratings-v2.yaml
+k get sa
+
+# Check log pod woth vault auth
 kubectl logs -n default ratings-v2-76c58c457c-gslkk -c vault-agent-init
 ```
 
