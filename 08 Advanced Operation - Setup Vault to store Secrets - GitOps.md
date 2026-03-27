@@ -101,7 +101,7 @@ k apply -f bookinfo/platform/vault/bookinfo-ratings-v2.yaml
 k get sa
 
 # Check log pod woth vault auth
-kubectl logs -n default ratings-v2-76c58c457c-gslkk -c vault-agent-init
+kubectl logs -n default ratings-v2-65d999559c-kwdkg   -c vault-agent-init
 ```
 
 ###  Setup ArgoCD
@@ -134,3 +134,14 @@ kubectl describe httproute argocd-route -n istio-system
 kubectl apply -f bookinfo/gateway-domain/argocd-certificate.yaml
 kubectl get certificate -n default
 ```
+
+### Use ArgoCD to manage Deployment
+```sh
+kubectl apply -f bookinfo/platform/argocd/role-argocd.yaml
+
+
+kubectl auth can-i list jobs.batch \
+  --as=system:serviceaccount:istio-system:argocd-application-controller
+
+kubectl auth can-i list cronjobs.batch \
+  --as=system:serviceaccount:istio-system:argocd-application-controller
