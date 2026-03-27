@@ -68,7 +68,9 @@ helm upgrade vault hashicorp/vault \
   --set "server.dev.enabled=true" \
   --set "server.dev.devRootToken=root" \
   --set "ui.enabled=true" \
-  --set "injector.enabled=true"
+  --set "injector.enabled=true" \
+  --set "server.extraEnvironmentVars.VAULT_ADDR=vault.hoangguruu.site"
+
 # Check injector
 kubectl get mutatingwebhookconfiguration | grep vault
 kubectl get pods -A | grep -i injector
