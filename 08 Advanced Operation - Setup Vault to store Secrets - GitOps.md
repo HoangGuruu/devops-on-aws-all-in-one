@@ -149,5 +149,4 @@ kubectl auth can-i list cronjobs.batch \
 kubectl auth can-i list secrets \
   --as=system:serviceaccount:istio-system:argocd-application-controller
 
-
 ```
