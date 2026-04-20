@@ -1,6 +1,6 @@
 # REAL PROJECT #1
 ![banner-1](./images/banner-1.png)
-![architecture-1](./images/architecture-1.png)
+![architecture-1](./images/Architecture-1.gif)
 
 - [00 Requirements and Setup](./00%20Requirements%20and%20Setup.md)
 - [01 Containerization Microservices Project](./01%20Containerization%20Microservices%20Project.md)
