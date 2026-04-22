@@ -1,5 +1,8 @@
 # REAL PROJECT #1
-![banner-1](./images/banner-1.png)
+## [Udemy Course](https://www.udemy.com/course/devops-on-aws-real-project-all-in-one/?referralCode=3F783CCB917A27EBB1E1)
+
+[![banner-1](./images/banner-1.png)](https://www.udemy.com/course/devops-on-aws-real-project-all-in-one/?referralCode=3F783CCB917A27EBB1E1)
+
 ![architecture-1](./images/Architecture-1.gif)
 
 - [00 Requirements and Setup](./00%20Requirements%20and%20Setup.md)
