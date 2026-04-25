@@ -1,6 +1,7 @@
-# REAL PROJECT #1
+# DevOps On AWS Real Projects - All In One
 ## [Udemy Course](https://www.udemy.com/course/devops-on-aws-real-project-all-in-one/?referralCode=3F783CCB917A27EBB1E1)
-
+## REAL PROJECT #1
+## Full End-to-End DevOps Workflow
 [![banner-1](./images/banner-1.png)](https://www.udemy.com/course/devops-on-aws-real-project-all-in-one/?referralCode=3F783CCB917A27EBB1E1)
 
 ![architecture-1](./images/Architecture-1.gif)
