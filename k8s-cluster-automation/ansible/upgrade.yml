@@ -1,0 +1,251 @@
+---
+# Usage:
+#   ansible-playbook upgrade.yml -e "k8s_version=1.29"
+#
+# The playbook upgrades one minor version at a time:
+#   1. Upgrade master (control plane)
+#   2. Upgrade workers one by one (rolling, zero downtime)
+
+# ─── Pre-flight check ─────────────────────────────────────────────────────────
+- name: Pre-flight checks
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure k8s_version variable is set
+      fail:
+        msg: "Please pass the target version: -e 'k8s_version=1.29'"
+      when: k8s_version is not defined
+      run_once: true
+
+    - name: Show current kubelet version on each node
+      shell: kubelet --version
+      register: kubelet_ver
+      changed_when: false
+
+    - name: Print current version
+      debug:
+        msg: "{{ inventory_hostname }}: {{ kubelet_ver.stdout }}"
+
+# ─── Upgrade Master ───────────────────────────────────────────────────────────
+- name: Upgrade control plane (master)
+  hosts: master
+  become: yes
+  tasks:
+    - name: Unhold kubeadm
+      dpkg_selections:
+        name: kubeadm
+        selection: install
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Add Kubernetes {{ k8s_version }} apt repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
+        state: present
+        filename: kubernetes
+
+    - name: Add Kubernetes {{ k8s_version }} apt key
+      apt_key:
+        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
+        state: present
+        keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Install target kubeadm
+      apt:
+        name: "kubeadm={{ k8s_version }}.*"
+        state: present
+        update_cache: yes
+        allow_downgrade: no
+
+    - name: Hold kubeadm
+      dpkg_selections:
+        name: kubeadm
+        selection: hold
+
+    - name: Verify kubeadm upgrade plan
+      shell: kubeadm upgrade plan v{{ k8s_version }}
+      register: upgrade_plan
+      changed_when: false
+
+    - name: Print upgrade plan
+      debug:
+        msg: "{{ upgrade_plan.stdout_lines }}"
+
+    - name: Apply kubeadm upgrade
+      shell: kubeadm upgrade apply v{{ k8s_version }} --yes
+
+    - name: Drain master node
+      become_user: ubuntu
+      shell: >
+        kubectl drain {{ inventory_hostname }}
+        --ignore-daemonsets
+        --delete-emptydir-data
+        --force
+        --timeout=120s
+
+    - name: Unhold kubelet and kubectl
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: install
+      loop:
+        - kubelet
+        - kubectl
+
+    - name: Install target kubelet and kubectl
+      apt:
+        name:
+          - "kubelet={{ k8s_version }}.*"
+          - "kubectl={{ k8s_version }}.*"
+        state: present
+        update_cache: yes
+
+    - name: Hold kubelet and kubectl
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubectl
+
+    - name: Restart kubelet
+      systemd:
+        name: kubelet
+        state: restarted
+        daemon_reload: yes
+
+    - name: Uncordon master node
+      become_user: ubuntu
+      shell: kubectl uncordon {{ inventory_hostname }}
+
+    - name: Wait for master to be Ready
+      become_user: ubuntu
+      shell: kubectl wait node {{ inventory_hostname }} --for=condition=Ready --timeout=120s
+
+    - name: Show master node status
+      become_user: ubuntu
+      shell: kubectl get node {{ inventory_hostname }}
+      register: master_status
+      changed_when: false
+
+    - name: Print master status
+      debug:
+        msg: "{{ master_status.stdout }}"
+
+# ─── Upgrade Workers (rolling, one at a time) ─────────────────────────────────
+- name: Upgrade worker nodes
+  hosts: workers
+  become: yes
+  serial: 1        # one worker at a time — keeps cluster available
+  tasks:
+    - name: Unhold kubeadm
+      dpkg_selections:
+        name: kubeadm
+        selection: install
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Add Kubernetes {{ k8s_version }} apt repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
+        state: present
+        filename: kubernetes
+
+    - name: Add Kubernetes {{ k8s_version }} apt key
+      apt_key:
+        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
+        state: present
+        keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Install target kubeadm
+      apt:
+        name: "kubeadm={{ k8s_version }}.*"
+        state: present
+        update_cache: yes
+
+    - name: Hold kubeadm
+      dpkg_selections:
+        name: kubeadm
+        selection: hold
+
+    - name: Upgrade node config
+      shell: kubeadm upgrade node
+
+    - name: Drain worker from master
+      become_user: ubuntu
+      delegate_to: "{{ groups['master'][0] }}"
+      shell: >
+        kubectl drain {{ inventory_hostname }}
+        --ignore-daemonsets
+        --delete-emptydir-data
+        --force
+        --timeout=120s
+
+    - name: Unhold kubelet and kubectl
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: install
+      loop:
+        - kubelet
+        - kubectl
+
+    - name: Install target kubelet and kubectl
+      apt:
+        name:
+          - "kubelet={{ k8s_version }}.*"
+          - "kubectl={{ k8s_version }}.*"
+        state: present
+        update_cache: yes
+
+    - name: Hold kubelet and kubectl
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubectl
+
+    - name: Restart kubelet
+      systemd:
+        name: kubelet
+        state: restarted
+        daemon_reload: yes
+
+    - name: Uncordon worker from master
+      become_user: ubuntu
+      delegate_to: "{{ groups['master'][0] }}"
+      shell: kubectl uncordon {{ inventory_hostname }}
+
+    - name: Wait for worker to be Ready
+      become_user: ubuntu
+      delegate_to: "{{ groups['master'][0] }}"
+      shell: kubectl wait node {{ inventory_hostname }} --for=condition=Ready --timeout=120s
+
+    - name: Show worker node status
+      become_user: ubuntu
+      delegate_to: "{{ groups['master'][0] }}"
+      shell: kubectl get node {{ inventory_hostname }}
+      register: worker_status
+      changed_when: false
+
+    - name: Print worker status
+      debug:
+        msg: "{{ worker_status.stdout }}"
+
+# ─── Post-upgrade summary ─────────────────────────────────────────────────────
+- name: Post-upgrade summary
+  hosts: master
+  become: yes
+  tasks:
+    - name: Show all nodes after upgrade
+      become_user: ubuntu
+      shell: kubectl get nodes -o wide
+      register: all_nodes
+      changed_when: false
+
+    - name: Print cluster state
+      debug:
+        msg: "{{ all_nodes.stdout_lines }}"
