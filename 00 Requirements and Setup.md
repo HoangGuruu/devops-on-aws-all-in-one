@@ -94,6 +94,14 @@ chmod 700 get_helm.sh
  
 - You can reference this way
 [Install Ansible on Ubuntu](https://helm.sh/docs/intro/install/)
+- Or simple way
+
+```sh
+sudo apt update
+sudo apt install ansible -y
+
+ansible --version
+```
 
 ###  Setup Remote SSH to work easily
 
