@@ -21,6 +21,9 @@ terraform apply -auto-approve
 # 3. Configure Kubernetes cluster
 cd ../ansible
 ansible-playbook playbook.yml
+
+ansible-playbook upgrade.yml -e "k8s_version=1.29"
+
 ```
 
 ### Access Your Cluster
@@ -36,6 +39,8 @@ ssh -i ~/.ssh/k8s-cluster-key.pem ubuntu@<MASTER_IP>
 # Check cluster
 kubectl get nodes
 kubectl get pods -A
+
+
 ```
 
 ## 🔑 SSH Key Automation
