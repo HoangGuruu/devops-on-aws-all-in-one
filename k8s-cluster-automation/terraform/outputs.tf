@@ -26,15 +26,17 @@ output "key_name" {
   value = var.key_name
 }
 
-output "lbc_role_arn" {
-  value       = aws_iam_role.lbc.arn
-  description = "IAM role ARN for the AWS Load Balancer Controller"
+output "alb_dns_name" {
+  value       = aws_lb.k8s_alb.dns_name
+  description = "ALB DNS name — point your domain here"
 }
 
-output "cluster_name" {
-  value = var.cluster_name
+output "alb_url" {
+  value       = "http://${aws_lb.k8s_alb.dns_name}"
+  description = "HTTP URL to access your cluster apps"
 }
 
-output "aws_account_id" {
-  value = data.aws_caller_identity.current.account_id
+output "nodeport_http" {
+  value       = var.nodeport_http
+  description = "NodePort the ALB forwards traffic to on worker nodes"
 }

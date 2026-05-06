@@ -14,17 +14,17 @@ variable "worker_count" {
   default = 2
 }
 
-variable "cluster_name" {
-  description = "Kubernetes cluster name (used for subnet tags and IAM naming)"
-  default     = "k8s-cluster"
-}
-
 variable "key_name" {
   description = "SSH key pair name"
   default     = "k8s-cluster-key"
 }
 
 variable "my_ip" {
-  description = "Your IP address for SSH access (use 0.0.0.0/0 for any IP, not recommended for production)"
+  description = "Your IP address for SSH access (use 0.0.0.0/0 for any IP)"
   default     = "0.0.0.0/0"
+}
+
+variable "nodeport_http" {
+  description = "NodePort your HTTP service listens on (must match your K8s Service)"
+  default     = 30080
 }

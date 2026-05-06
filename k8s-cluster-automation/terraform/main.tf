@@ -15,9 +15,6 @@ terraform {
   }
 }
 
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" { name = var.aws_region }
-
 provider "aws" {
   region = var.aws_region
 }
@@ -42,12 +39,11 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Use default VPC
+# ─── Default VPC & Subnets ────────────────────────────────────────────────────
 data "aws_vpc" "default" {
   default = true
 }
 
-# Use default subnet
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
@@ -59,49 +55,60 @@ data "aws_subnet" "default" {
   id = data.aws_subnets.default.ids[0]
 }
 
-# Tag all default subnets so the LBC can discover them for ALB provisioning
-resource "aws_subnet_tag" "public_elb" {
-  for_each  = toset(data.aws_subnets.default.ids)
-  subnet_id = each.value
-  key       = "kubernetes.io/role/elb"
-  value     = "1"
-}
-
-resource "aws_subnet_tag" "cluster_owned" {
-  for_each  = toset(data.aws_subnets.default.ids)
-  subnet_id = each.value
-  key       = "kubernetes.io/cluster/${var.cluster_name}"
-  value     = "owned"
-}
-
-# Generate SSH key pair
+# ─── SSH Key Pair (auto-generated) ────────────────────────────────────────────
 resource "tls_private_key" "k8s_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-# Create AWS key pair
 resource "aws_key_pair" "k8s_key" {
   key_name   = var.key_name
   public_key = tls_private_key.k8s_key.public_key_openssh
-
-  tags = {
-    Name = "k8s-cluster-key"
-  }
+  tags       = { Name = var.key_name }
 }
 
-# Save private key locally
 resource "local_file" "private_key" {
   content         = tls_private_key.k8s_key.private_key_pem
   filename        = "${path.module}/${var.key_name}.pem"
   file_permission = "0400"
 }
 
-# Save private key to user's .ssh directory
 resource "local_file" "private_key_ssh" {
   content         = tls_private_key.k8s_key.private_key_pem
   filename        = pathexpand("~/.ssh/${var.key_name}.pem")
   file_permission = "0400"
+}
+
+# ─── Security Groups ──────────────────────────────────────────────────────────
+resource "aws_security_group" "alb_sg" {
+  name        = "k8s-alb-sg"
+  description = "Allow HTTP/HTTPS inbound to ALB"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "k8s-alb-sg" }
 }
 
 resource "aws_security_group" "k8s_sg" {
@@ -109,7 +116,6 @@ resource "aws_security_group" "k8s_sg" {
   description = "Security group for K8s cluster with all required ports"
   vpc_id      = data.aws_vpc.default.id
 
-  # SSH access
   ingress {
     description = "SSH"
     from_port   = 22
@@ -118,7 +124,6 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [var.my_ip]
   }
 
-  # Kubernetes API server
   ingress {
     description = "Kubernetes API"
     from_port   = 6443
@@ -127,7 +132,6 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [var.my_ip]
   }
 
-  # etcd server client API
   ingress {
     description = "etcd"
     from_port   = 2379
@@ -136,7 +140,6 @@ resource "aws_security_group" "k8s_sg" {
     self        = true
   }
 
-  # Kubelet API
   ingress {
     description = "Kubelet API"
     from_port   = 10250
@@ -145,7 +148,6 @@ resource "aws_security_group" "k8s_sg" {
     self        = true
   }
 
-  # kube-scheduler
   ingress {
     description = "kube-scheduler"
     from_port   = 10259
@@ -154,7 +156,6 @@ resource "aws_security_group" "k8s_sg" {
     self        = true
   }
 
-  # kube-controller-manager
   ingress {
     description = "kube-controller-manager"
     from_port   = 10257
@@ -163,7 +164,6 @@ resource "aws_security_group" "k8s_sg" {
     self        = true
   }
 
-  # NodePort Services
   ingress {
     description = "NodePort Services"
     from_port   = 30000
@@ -172,7 +172,6 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = [var.my_ip]
   }
 
-  # Flannel VXLAN
   ingress {
     description = "Flannel VXLAN"
     from_port   = 8472
@@ -181,7 +180,6 @@ resource "aws_security_group" "k8s_sg" {
     self        = true
   }
 
-  # Flannel health check
   ingress {
     description = "Flannel health"
     from_port   = 8285
@@ -190,7 +188,6 @@ resource "aws_security_group" "k8s_sg" {
     self        = true
   }
 
-  # Allow all internal cluster communication
   ingress {
     description = "Internal cluster communication"
     from_port   = 0
@@ -199,7 +196,6 @@ resource "aws_security_group" "k8s_sg" {
     self        = true
   }
 
-  # Allow all outbound traffic
   egress {
     description = "All outbound traffic"
     from_port   = 0
@@ -208,11 +204,21 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "k8s-cluster-sg"
-  }
+  tags = { Name = "k8s-cluster-sg" }
 }
 
+# Allow ALB to reach NodePort range on worker nodes
+resource "aws_security_group_rule" "alb_to_nodeport" {
+  type                     = "ingress"
+  from_port                = 30000
+  to_port                  = 32767
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.k8s_sg.id
+  source_security_group_id = aws_security_group.alb_sg.id
+  description              = "ALB to NodePort"
+}
+
+# ─── EC2 Instances ────────────────────────────────────────────────────────────
 resource "aws_instance" "k8s_master" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type_master
@@ -250,62 +256,58 @@ resource "aws_instance" "k8s_worker" {
   }
 }
 
-# ─── IAM: AWS Load Balancer Controller ───────────────────────────────────────
+# ─── Application Load Balancer ────────────────────────────────────────────────
+resource "aws_lb" "k8s_alb" {
+  name               = "k8s-cluster-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = data.aws_subnets.default.ids
 
-# OIDC thumbprint for the self-managed K8s API server (needed for IRSA)
-data "tls_certificate" "k8s_oidc" {
-  url = "https://${aws_instance.k8s_master.public_ip}:6443"
+  tags = { Name = "k8s-cluster-alb" }
 }
 
-resource "aws_iam_openid_connect_provider" "k8s_oidc" {
-  url             = "https://${aws_instance.k8s_master.public_ip}:6443"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.k8s_oidc.certificates[0].sha1_fingerprint]
+# ─── Target Group ─────────────────────────────────────────────────────────────
+resource "aws_lb_target_group" "k8s_http" {
+  name        = "k8s-http-tg"
+  port        = var.nodeport_http
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
+  target_type = "instance"
+
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    port                = var.nodeport_http
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    interval            = 15
+    timeout             = 5
+  }
+
+  tags = { Name = "k8s-http-tg" }
 }
 
-data "aws_iam_policy_document" "lbc_assume" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    principals {
-      type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.k8s_oidc.arn]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "${replace(aws_iam_openid_connect_provider.k8s_oidc.url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
-    }
+resource "aws_lb_target_group_attachment" "k8s_workers" {
+  count            = var.worker_count
+  target_group_arn = aws_lb_target_group.k8s_http.arn
+  target_id        = aws_instance.k8s_worker[count.index].id
+  port             = var.nodeport_http
+}
+
+# ─── HTTP Listener ────────────────────────────────────────────────────────────
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.k8s_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.k8s_http.arn
   }
 }
 
-resource "aws_iam_role" "lbc" {
-  name               = "AmazonEKSLoadBalancerControllerRole-${var.cluster_name}"
-  assume_role_policy = data.aws_iam_policy_document.lbc_assume.json
-  tags               = { Name = "lbc-role" }
-}
-
-resource "aws_iam_policy" "lbc" {
-  name   = "AWSLoadBalancerControllerIAMPolicy-${var.cluster_name}"
-  policy = file("${path.module}/lbc-iam-policy.json")
-}
-
-resource "aws_iam_role_policy_attachment" "lbc" {
-  role       = aws_iam_role.lbc.name
-  policy_arn = aws_iam_policy.lbc.arn
-}
-
-# Write values file for Ansible helm install
-resource "local_file" "lbc_values" {
-  content = templatefile("${path.module}/lbc-values.tpl", {
-    cluster_name = var.cluster_name
-    region       = var.aws_region
-    vpc_id       = data.aws_vpc.default.id
-    role_arn     = aws_iam_role.lbc.arn
-  })
-  filename = "${path.module}/../ansible/lbc-values.yaml"
-}
-
-
+# ─── Ansible Inventory ────────────────────────────────────────────────────────
 resource "local_file" "ansible_inventory" {
   content = templatefile("${path.module}/inventory.tpl", {
     master_ip  = aws_instance.k8s_master.public_ip
