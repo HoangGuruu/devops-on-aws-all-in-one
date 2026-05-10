@@ -1,273 +1,246 @@
 ---
-# Usage:
-#   ansible-playbook upgrade.yml -e "k8s_version=1.29.3"
+# upgrade-cluster.yml
+# Upgrade Kubernetes kubeadm cluster by one minor version
+# Inventory groups expected:
+#   [master]
+#   master-node
 #
-# Derived automatically:
-#   k8s_version = 1.29.3
-#   → apt repo      : v1.29
-#   → kubeadm pkg   : 1.29.3-*
-#   → kubeadm apply : v1.29.3
-#   → kubelet pkg   : 1.29.*
-#   → kubectl pkg   : 1.29.*
+#   [workers]
+#   worker-node-1
+#   worker-node-2
 
-# ─── Pre-flight ───────────────────────────────────────────────────────────────
-- name: Pre-flight checks
+- name: Prepare Kubernetes upgrade variables on all nodes
   hosts: all
   become: yes
+  gather_facts: yes
   tasks:
-    - name: Ensure k8s_version is provided
-      fail:
-        msg: "Provide the target version: -e 'k8s_version=X.Y.Z'  (e.g. 1.29.3)"
-      when: k8s_version is not defined
-      run_once: true
-
-    - name: Validate k8s_version format (X.Y.Z)
-      fail:
-        msg: "k8s_version '{{ k8s_version }}' must be X.Y.Z format (e.g. 1.29.3)"
-      when: k8s_version is not match('^\d+\.\d+\.\d+$')
-      run_once: true
-
-    - name: Derive version variables
-      set_fact:
-        k8s_minor:     "{{ k8s_version.split('.')[:2] | join('.') }}"
-        k8s_pkg:       "{{ k8s_version }}-*"
-        k8s_minor_pkg: "{{ k8s_version.split('.')[:2] | join('.') }}.*"
-
-    - name: Show version plan
-      debug:
-        msg:
-          - "k8s_version input : {{ k8s_version }}"
-          - "apt repo          : v{{ k8s_minor }}"
-          - "kubeadm pkg       : {{ k8s_pkg }}"
-          - "kubeadm apply     : v{{ k8s_version }}"
-          - "kubelet pkg       : {{ k8s_minor_pkg }}"
-          - "kubectl pkg       : {{ k8s_minor_pkg }}"
-      run_once: true
-
-    - name: Show current kubelet version
-      shell: kubelet --version
-      register: kubelet_ver
+    - name: Get current Kubernetes version from kubelet
+      shell: "kubelet --version | awk '{print $2}' | sed 's/v//'"
+      register: current_k8s_version
       changed_when: false
 
-    - name: Print current version per node
-      debug:
-        msg: "{{ inventory_hostname }} current → {{ kubelet_ver.stdout }}"
+    - name: Calculate current and target minor version
+      set_fact:
+        current_minor_version: "{{ current_k8s_version.stdout.split('.')[0] }}.{{ current_k8s_version.stdout.split('.')[1] }}"
+        target_minor_version: "{{ current_k8s_version.stdout.split('.')[0] }}.{{ (current_k8s_version.stdout.split('.')[1] | int) + 1 }}"
 
-# ─── Upgrade Master ───────────────────────────────────────────────────────────
-- name: Upgrade control plane (master)
+    - name: Display upgrade plan
+      debug:
+        msg: |
+          Kubernetes upgrade plan:
+          Host: {{ inventory_hostname }}
+          Current version: {{ current_k8s_version.stdout }}
+          Current minor: v{{ current_minor_version }}
+          Target minor: v{{ target_minor_version }}
+
+    - name: Update Kubernetes apt repository to target minor version
+      copy:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        content: |
+          deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ target_minor_version }}/deb/ /
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Find latest patch version for target Kubernetes version
+      shell: "apt-cache madison kubeadm | grep '{{ target_minor_version }}' | head -1 | awk '{print $3}'"
+      register: k8s_latest_patch_version
+      changed_when: false
+
+    - name: Fail if target Kubernetes package version is not found
+      fail:
+        msg: "Cannot find kubeadm package for v{{ target_minor_version }}. Check Kubernetes apt repository."
+      when: k8s_latest_patch_version.stdout == ""
+
+    - name: Display target package version
+      debug:
+        msg: "Target Kubernetes package version: {{ k8s_latest_patch_version.stdout }}"
+
+
+- name: Upgrade Kubernetes control-plane node
   hosts: master
   become: yes
+  serial: 1
+  vars:
+    kube_user: ubuntu
+    kubeconfig_path: /home/ubuntu/.kube/config
   tasks:
-    - name: Derive version variables
+    - name: Set Kubernetes node name
       set_fact:
-        k8s_minor:     "{{ k8s_version.split('.')[:2] | join('.') }}"
-        k8s_pkg:       "{{ k8s_version }}-*"
-        k8s_minor_pkg: "{{ k8s_version.split('.')[:2] | join('.') }}.*"
+        kube_node_name: "{{ ansible_hostname }}"
+
+    - name: Cordon control-plane node
+      command: "kubectl cordon {{ kube_node_name }}"
+      become_user: "{{ kube_user }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      changed_when: true
+
+    - name: Drain control-plane node
+      command: "kubectl drain {{ kube_node_name }} --ignore-daemonsets --delete-emptydir-data --force"
+      become_user: "{{ kube_user }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      changed_when: true
 
     - name: Unhold kubeadm
-      dpkg_selections:
-        name: kubeadm
-        selection: install
+      command: apt-mark unhold kubeadm
+      changed_when: false
 
-    - name: Add apt key for v{{ k8s_minor }}
-      apt_key:
-        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_minor }}/deb/Release.key"
-        state: present
-        keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-
-    - name: Add apt repo for v{{ k8s_minor }}
-      apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_minor }}/deb/ /"
-        state: present
-        filename: kubernetes
-
-    - name: Install kubeadm={{ k8s_pkg }}
+    - name: Upgrade kubeadm
       apt:
-        name: "kubeadm={{ k8s_pkg }}"
+        name: "kubeadm={{ k8s_latest_patch_version.stdout }}"
         state: present
         update_cache: yes
 
     - name: Hold kubeadm
-      dpkg_selections:
-        name: kubeadm
-        selection: hold
-
-    - name: Show upgrade plan for v{{ k8s_version }}
-      shell: kubeadm upgrade plan v{{ k8s_version }}
-      register: upgrade_plan
+      command: apt-mark hold kubeadm
       changed_when: false
 
-    - name: Print upgrade plan
+    - name: Show kubeadm version
+      command: kubeadm version
+      register: kubeadm_version_output
+      changed_when: false
+
+    - name: Display kubeadm version
       debug:
-        msg: "{{ upgrade_plan.stdout_lines }}"
+        msg: "{{ kubeadm_version_output.stdout }}"
 
-    - name: Apply control plane upgrade to v{{ k8s_version }}
-      shell: kubeadm upgrade apply v{{ k8s_version }} --yes
+    - name: Run kubeadm upgrade plan
+      command: kubeadm upgrade plan
+      register: upgrade_plan_output
+      changed_when: false
 
-    - name: Drain master
-      become_user: ubuntu
-      shell: >
-        kubectl drain {{ inventory_hostname }}
-        --ignore-daemonsets
-        --delete-emptydir-data
-        --force
-        --timeout=120s
+    - name: Display kubeadm upgrade plan
+      debug:
+        msg: "{{ upgrade_plan_output.stdout }}"
+
+    - name: Extract Kubernetes version for kubeadm upgrade
+      set_fact:
+        k8s_version_number: "{{ k8s_latest_patch_version.stdout.split('-')[0] }}"
+
+    - name: Apply kubeadm upgrade
+      command: "kubeadm upgrade apply v{{ k8s_version_number }} --yes"
+      changed_when: true
 
     - name: Unhold kubelet and kubectl
-      dpkg_selections:
-        name: "{{ item }}"
-        selection: install
-      loop: [kubelet, kubectl]
+      command: apt-mark unhold kubelet kubectl
+      changed_when: false
 
-    - name: Install kubelet={{ k8s_minor_pkg }} kubectl={{ k8s_minor_pkg }}
+    - name: Upgrade kubelet and kubectl
       apt:
         name:
-          - "kubelet={{ k8s_minor_pkg }}"
-          - "kubectl={{ k8s_minor_pkg }}"
+          - "kubelet={{ k8s_latest_patch_version.stdout }}"
+          - "kubectl={{ k8s_latest_patch_version.stdout }}"
         state: present
         update_cache: yes
 
     - name: Hold kubelet and kubectl
-      dpkg_selections:
-        name: "{{ item }}"
-        selection: hold
-      loop: [kubelet, kubectl]
+      command: apt-mark hold kubelet kubectl
+      changed_when: false
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
 
     - name: Restart kubelet
       systemd:
         name: kubelet
         state: restarted
-        daemon_reload: yes
+        enabled: yes
 
-    - name: Uncordon master
-      become_user: ubuntu
-      shell: kubectl uncordon {{ inventory_hostname }}
+    - name: Uncordon control-plane node
+      command: "kubectl uncordon {{ kube_node_name }}"
+      become_user: "{{ kube_user }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      changed_when: true
 
-    - name: Wait for master Ready
-      become_user: ubuntu
-      shell: kubectl wait node {{ inventory_hostname }} --for=condition=Ready --timeout=120s
 
-    - name: Show master status
-      become_user: ubuntu
-      shell: kubectl get node {{ inventory_hostname }}
-      register: master_status
-      changed_when: false
-
-    - name: Print master status
-      debug:
-        msg: "{{ master_status.stdout }} → upgraded to v{{ k8s_version }}"
-
-# ─── Upgrade Workers (rolling, one at a time) ─────────────────────────────────
-- name: Upgrade worker nodes
+- name: Upgrade Kubernetes worker nodes
   hosts: workers
   become: yes
   serial: 1
+  vars:
+    kube_user: ubuntu
+    kubeconfig_path: /home/ubuntu/.kube/config
+    master_delegate: "{{ groups['master'][0] }}"
   tasks:
-    - name: Derive version variables
+    - name: Set Kubernetes node name
       set_fact:
-        k8s_minor:     "{{ k8s_version.split('.')[:2] | join('.') }}"
-        k8s_pkg:       "{{ k8s_version }}-*"
-        k8s_minor_pkg: "{{ k8s_version.split('.')[:2] | join('.') }}.*"
+        kube_node_name: "{{ ansible_hostname }}"
 
     - name: Unhold kubeadm
-      dpkg_selections:
-        name: kubeadm
-        selection: install
+      command: apt-mark unhold kubeadm
+      changed_when: false
 
-    - name: Add apt key for v{{ k8s_minor }}
-      apt_key:
-        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_minor }}/deb/Release.key"
-        state: present
-        keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-
-    - name: Add apt repo for v{{ k8s_minor }}
-      apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_minor }}/deb/ /"
-        state: present
-        filename: kubernetes
-
-    - name: Install kubeadm={{ k8s_pkg }}
+    - name: Upgrade kubeadm
       apt:
-        name: "kubeadm={{ k8s_pkg }}"
+        name: "kubeadm={{ k8s_latest_patch_version.stdout }}"
         state: present
         update_cache: yes
 
     - name: Hold kubeadm
-      dpkg_selections:
-        name: kubeadm
-        selection: hold
+      command: apt-mark hold kubeadm
+      changed_when: false
 
-    - name: Upgrade node config
-      shell: kubeadm upgrade node
+    - name: Run kubeadm upgrade node
+      command: kubeadm upgrade node
+      changed_when: true
 
-    - name: Drain {{ inventory_hostname }}
-      become_user: ubuntu
-      delegate_to: "{{ groups['master'][0] }}"
-      shell: >
-        kubectl drain {{ inventory_hostname }}
-        --ignore-daemonsets
-        --delete-emptydir-data
-        --force
-        --timeout=120s
+    - name: Cordon worker node
+      command: "kubectl cordon {{ kube_node_name }}"
+      delegate_to: "{{ master_delegate }}"
+      become: yes
+      become_user: "{{ kube_user }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      changed_when: true
+
+    - name: Drain worker node
+      command: "kubectl drain {{ kube_node_name }} --ignore-daemonsets --delete-emptydir-data --force"
+      delegate_to: "{{ master_delegate }}"
+      become: yes
+      become_user: "{{ kube_user }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      changed_when: true
 
     - name: Unhold kubelet and kubectl
-      dpkg_selections:
-        name: "{{ item }}"
-        selection: install
-      loop: [kubelet, kubectl]
+      command: apt-mark unhold kubelet kubectl
+      changed_when: false
 
-    - name: Install kubelet={{ k8s_minor_pkg }} kubectl={{ k8s_minor_pkg }}
+    - name: Upgrade kubelet and kubectl
       apt:
         name:
-          - "kubelet={{ k8s_minor_pkg }}"
-          - "kubectl={{ k8s_minor_pkg }}"
+          - "kubelet={{ k8s_latest_patch_version.stdout }}"
+          - "kubectl={{ k8s_latest_patch_version.stdout }}"
         state: present
         update_cache: yes
 
     - name: Hold kubelet and kubectl
-      dpkg_selections:
-        name: "{{ item }}"
-        selection: hold
-      loop: [kubelet, kubectl]
+      command: apt-mark hold kubelet kubectl
+      changed_when: false
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
 
     - name: Restart kubelet
       systemd:
         name: kubelet
         state: restarted
-        daemon_reload: yes
+        enabled: yes
 
-    - name: Uncordon {{ inventory_hostname }}
-      become_user: ubuntu
-      delegate_to: "{{ groups['master'][0] }}"
-      shell: kubectl uncordon {{ inventory_hostname }}
-
-    - name: Wait for {{ inventory_hostname }} Ready
-      become_user: ubuntu
-      delegate_to: "{{ groups['master'][0] }}"
-      shell: kubectl wait node {{ inventory_hostname }} --for=condition=Ready --timeout=120s
-
-    - name: Show worker status
-      become_user: ubuntu
-      delegate_to: "{{ groups['master'][0] }}"
-      shell: kubectl get node {{ inventory_hostname }}
-      register: worker_status
-      changed_when: false
-
-    - name: Print worker status
-      debug:
-        msg: "{{ worker_status.stdout }} → upgraded to v{{ k8s_version }}"
-
-# ─── Post-upgrade summary ─────────────────────────────────────────────────────
-- name: Post-upgrade summary
-  hosts: master
-  become: yes
-  tasks:
-    - name: Show all nodes
-      become_user: ubuntu
-      shell: kubectl get nodes -o wide
-      register: all_nodes
-      changed_when: false
-
-    - name: Print cluster state
-      debug:
-        msg: "{{ all_nodes.stdout_lines }}"
+    - name: Uncordon worker node
+      command: "kubectl uncordon {{ kube_node_name }}"
+      delegate_to: "{{ master_delegate }}"
+      become: yes
+      become_user: "{{ kube_user }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      changed_when: true

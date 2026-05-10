@@ -22,8 +22,12 @@ terraform apply -auto-approve
 cd ../ansible
 ansible-playbook playbook.yml
 
-ansible-playbook upgrade.yml -e "k8s_version=1.29"
+ansible-playbook -i inventory.ini install-k8s.yml \
+  -e kubernetes_minor_version=1.34 \
+  -e kubernetes_version=1.34.0-1.1
 
+ansible-playbook -i inventory.ini upgrade.yml \
+  -e kubernetes_minor_version=1.35
 ```
 
 ### Access Your Cluster
