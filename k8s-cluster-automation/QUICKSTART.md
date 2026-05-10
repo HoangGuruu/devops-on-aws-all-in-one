@@ -40,10 +40,16 @@ terraform output ssh_command_master
 # Or manually
 ssh -i ~/.ssh/k8s-cluster-key.pem ubuntu@<MASTER_IP>
 
+# Setup Config from Ubuntu Server
+mkdir -p ~/.kube
+scp ubuntu@<MASTER_IP>:/home/ubuntu/.kube/config ~/.kube/config
+scp -i ~/.ssh/k8s-cluster-key.pem ubuntu@3.237.232.95:/home/ubuntu/.kube/config ~/.kube/config
+
+chmod 600 ~/.kube/config
+
 # Check cluster
 kubectl get nodes
 kubectl get pods -A
-
 
 ```
 
