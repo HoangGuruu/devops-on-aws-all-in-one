@@ -22,7 +22,7 @@ terraform apply -auto-approve
 cd ../ansible
 ansible-playbook playbook.yml
 
-ansible-playbook -i inventory.ini install-k8s.yml \
+ansible-playbook -i inventory.ini install.yml \
   -e kubernetes_minor_version=1.34 \
   -e kubernetes_version=1.34.0-1.1
 
