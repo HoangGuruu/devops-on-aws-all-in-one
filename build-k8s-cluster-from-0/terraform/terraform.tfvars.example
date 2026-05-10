@@ -1,6 +1,0 @@
-aws_region           = "us-east-1"
-instance_type_master = "t3.medium"
-instance_type_worker = "t3.small"
-worker_count         = 2
-key_name             = "k8s-cluster-key"
-my_ip                = "0.0.0.0/0"  # Change to YOUR_IP/32 for better security
